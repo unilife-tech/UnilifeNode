@@ -18,7 +18,7 @@ const Language        = require('./models/language');
 const Skills          = require('./models/skills');
 const Education       = require('./models/education');
 const Experience      = require('./models/experience');
-//const Highlights      = require('./models/highlights');
+const Highlight       = require('./models/highlights');
 const University_schools = require('./models/university_schools');
 const  Otp            = require('./models/otp');
 const Domain          = require('./models/domain');
@@ -40,20 +40,42 @@ const About                   = require('./models/about_us');
 const Post_attachment         = require('./models/post_attachments');
 const Event_link_user_list    = require('./models/event_link_user_list');
 const Categories              = require('./models/categories');
+const Blog_banner             = require('./models/blog_banner');
+const Blog_categories         = require('./models/blog_categories');
+const Blog_likes              = require('./models/blog_likes');
+
+// 26-07-21 modal 
+
+const Brand_banner            = require('./models/brand_banner');
+const Contact_us              = require('./models/contact_us');
+const Discount_coupons        = require('./models/discount_coupons');
+const Faqs                    = require('./models/faqs');
+const Feedback                = require('./models/feedback');
+const Terms                   = require('./models/term&conditions');
+const Redeem_user             = require('./models/brands_redeem_user');
+const User_social_profile     = require('./models/user_social_profile');
+// const university              = require('./models/university');
+
 
 
 // access_right, admin_groups, admin_users, admin_users_groups, archieve_chat
-// back_up, block_user, blogs, blog_banner, blog_categories, blog_likes,
-// brands_online_instore, brands_redeem_user, brand_banner,categories_icon_profiles,
+// back_up, block_user,
+// brands_online_instore,categories_icon_profiles,
 // chat, chat_rooms, chat_seen_unseen, chat_wallpaper, comments, comment_replies,
-// contact_us, course_covered, delete_user_group_chat, discount_coupons, domains,
-// faqs, feedback, friend_requests, group_users, hide_user, hobbies_interests, json_request,
+// course_covered, delete_user_group_chat, domains,
+// friend_requests, group_users, hide_user, hobbies_interests, json_request,
 // management_section, notifications, our_teams, posts_options, post_comment_likes,
 // post_options_select_by_user, post_tag_groups, post_tag_users, profile_questions,
 // profile_user_answers, reply_contact_us, report_user_post, social_media_post,
 // term&conditions, user_blog_saved, user_categories_profiles, user_hobbies_interests,
 // user_offer_saved, user_read_blog, user_shared_blog, 	user_shared_offer, user_view_offer, version
 
+
+
+const port = process.env.port || 5000
+var app = express();
+
+//************/ email setting ***********//
 var transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -62,12 +84,30 @@ var transporter = nodemailer.createTransport({
   },
 });
 
+mongoose.set('useNewUrlParser', true);
+mongoose.set('useFindAndModify', false);
+mongoose.set('useCreateIndex', true);
+
+//********** files upload **************/
+const multer = require( 'multer' );
+const blog_banner = require('./models/blog_banner');
+const user = require('./models/user');
+var storage = multer.diskStorage({
+    destination: function ( req, file, cb ) {
+        cb(null, './uploads');
+    },
+    filename: function ( req, file, cb ) {
+        cb( null, Math.floor( Date.now() / 1000 ) + file.originalname );
+    }
+});
+var upload = multer({
+    storage: storage
+});
+
+//********** files upload ends **************/
 
 
 
-
-const port = process.env.port || 5000
-var app = express();
 
 mongoose.Promise = global.Promise;
 var promise = mongoose.connect('mongodb+srv://dubai_students_93:dubai_students_93@unilife.jxohc.mongodb.net/new_dubai_students_93?retryWrites=true&w=majority', {
@@ -89,40 +129,135 @@ app.listen(port, function () {
 });
 app.use(express.json());
 
+//****** CROS browser *********/
 
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
 
-//*********************   unilife new Api Starts here ***********************//
+//****** CROS browser ends here *********/
+
+//*********************   Unilife new Api Starts here ***********************//
 
 
 //*********** University list *************************//
 
 app.get('/university-list',(req,res)=>{
 
-	University.find()
+  University.find()
     .then((data) => {
       let userdata = data;
       if(userdata.length > 0) {
-
         res.send({
           status: true,
           message: "university list",
           data: userdata,
         });
-      } else {
+      } 
+      else {
         res.send({
           status: false,
           message: "data not found",
           data: [],
         });
       }
-  
     })
     .catch((e) => {
       res.send(e);
     });
   
-  
 });
+
+app.post("/add-university-school", (req , res) => {
+  let name        = req.body.university;
+  let deanname    = req.body.deanname;
+  let noofstudent = req.body.noofstudent;
+  let domain      = req.body.domain;
+  let status      = req.body.status;
+
+  //************  time stamp  **************************/
+  let today = new Date();
+  let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date+' '+time;
+
+  //************  time stamp  **************************/
+
+  let universityschoolData = {"name"            : name,
+                              "dean_name"       : deanname,
+                              "no_of_students"  : noofstudent,
+                              "status"          : status,
+                              "created_at"      : dateTime,
+                              "updated_at"      : dateTime
+                              };
+    const university_schools = new University_schools(universityschoolData);
+    university_schools.save().then(()=>{
+      
+    });
+    let lastId = 'de344b7544gvhh6hsadg';
+
+      University_schools.find({ name: name},function(err, data) {
+       let schooldata = data;
+          
+             lastId =  schooldata.find(_id => lastId._id);
+
+            let universityData = {"university_id" : lastId,
+                                "university_name" : name,
+                                "domain"          : domain
+                              }; 
+            const school = new University(universityData);
+            school.save().then(() => {
+              res.send({
+                status: true, 
+                message: "University save successfully"
+                
+              });
+
+            })
+            .catch((e) => {
+              res.send({
+                status: false,
+                message: "something went wrong "+e
+              
+              });
+            });
+
+      })
+      .catch((e) => {
+        res.send(e);
+      });
+
+});
+
+app.post("/delete-university-school", (req, res) => {
+  let university_id    = req.body.university_id;
+  University_schools.remove({ _id : university_id })
+    .then(() => {
+      res.send({
+          status: true,
+          message: "University school has been deleted"
+          
+        });
+     
+    })
+    .catch((e) => {
+      res.send({
+        status: false,
+        message: "University school has failed to delete"
+        
+      });
+    });
+
+});
+
+
+
+
+
+
+
 app.get('/degree-list',(req,res)=>{
 
 	Degree.find()
@@ -324,7 +459,6 @@ app.post('/signup-user',(req,res)=>{
               }
             });
 
-            
             user.save().then(() => {
               res.send({ status : true, message: 'Otp has been sent to email', data: otpData});
 
@@ -333,27 +467,16 @@ app.post('/signup-user',(req,res)=>{
               res.send(e);
              })
 
-           
-
         }).catch((e)=>{
          // res.send({ status : false, message: 'user has faied to signup ', data: []});
          res.send(e);
         })
 
-        
-
-
-
+     
     //***************************** send otp to email ends ******************************/
 
   
 });
-
-
-
-
-
-
 
 
 
@@ -629,23 +752,106 @@ app.post("/get-url", (req, res) => {
 //******  get_all_profile_data ************/
 
 
-app.post("/get_all_profile_data", (req , res ) => {
+app.post("/get_all_profile_data", async function (req, res)  {
   
   let user_id = req.body.user_id;
+  var obj = [];
+  var response = [];
+  var university_school_id = "";
 
-  User.find({ _id: user_id})
-    .then((data) => {
-      let userdata = data; // for user data 
-        University.find({_id : userdata.university_school_id} ).then((unidata) => {
-          console.log(unidata);
-        })
-        .catch((e) => {
-          res.send(e);
-        });
+  uid = "61007100f48a652d280f7254";
+  let unilife_user_name = "";
+  let profile_banner_image = "";
+  let university_schools_name = "";
+  let user_type = "";
+  let profile_logo = "";
+  let profile_image = "";
+
+
+  await User.find({_id : uid}).then((data) => {
+
+     university_school_id = data[0].university_school_id;
+
+       unilife_user_name = data[0].username;
+       profile_banner_image = data[0].profile_banner_image;
+       university_schools_name = data[0].profile_banner_image;
+       user_type = data[0].user_type;
+
+   
+  })
+
+  console.log(obj);
+
+  await University_schools.find({_id : university_school_id}).then((unidata) => {
+
+     
+  })
+
+        // obj[0]['unilife_user_name'] = null;
+        // obj[0]['profile_banner_image'] = null;
+        // obj[0]['university_schools_name'] = null;
+        // obj[0]['user_type'] = "student";
+
+  
+    await Highlight.find({user_id : user_id}).then((uhigh) => {
+      response['user_highlights'] = uhigh;
+
+      
     })
-    .catch((e) => {
-      res.send(e);
-    });
+
+    await Education.find({user_id : user_id}).then((uedu) => {
+      response['user_education'] = uedu;
+    })
+
+    await Skills.find({user_id : user_id}).then((uskills) => {
+      response['user_skills'] = uskills;
+    })
+
+    await Language.find({user_id : user_id}).then((lang) => {
+      response['user_languages'] = lang;
+    })
+
+    await Achievement.find({user_id : user_id}).then((achieve) => {
+      response['user_achievements'] = achieve;
+    })
+
+    await Interest.find({user_id : user_id}).then((userInterest) => {
+      response['user_interest'] = userInterest;
+    })
+
+    await User_social_profile.find({user_id : user_id}).then((social) => {
+      response['user_social_profile'] = social;
+    })
+
+    await Experience.find({user_id : user_id}).then((course) => {
+      response['user_course'] = course;
+    })
+
+    let data = response;
+      //console.log(response);
+         res.send({ 
+          status: true,
+          message: "data Successfully",
+          respoonse: { user_course       : response['user_course'],
+                      user_highlights     : response['user_highlights'],
+                      user_education      : response['user_education'],
+                      user_skills         : response['user_skills'],
+                      user_languages     : response['user_languages'],
+                      user_achievements   : response['user_achievements'],
+                      user_interest       : response['user_interest'],
+                      user_social_profile : response['user_social_profile']
+                      
+                      },
+          self_intoduction : { 
+                                unilife_user_name     : unilife_user_name,
+                                profile_banner_image     : profile_banner_image,
+                                university_schools_name   : university_schools_name,
+                                user_type                 : user_type,
+                                profile_logo              : profile_logo,
+                                profile_image             : profile_image
+
+                            }
+        });
 
 
 });
@@ -740,6 +946,61 @@ app.post("/adminlogin", (req, res) => {
   });
 
 });
+
+
+
+
+
+app.get("/userexport", (req, res) => {
+
+    User.find( {"_id":1, "Username":1,"university_school_id": 1,"university_school_email":1,"profile_status":1,"Status":1,"created_at":1 }).then((pdata) => {
+      let userdata = pdata; // for user data 
+      if(userdata.length > 0) {
+
+        res.send({
+          status: true,
+          message: "user export list",
+          data: userdata,
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "data not found",
+          data: [],
+        });
+      }
+      })
+      .catch((e) => {
+        res.send(e);
+      });
+
+  });
+
+//   User.find({})
+//     .then((data) => {
+//       let userdata = data; // for user data 
+//       if(userdata.length > 0) {
+
+//         res.send({
+//           status: true,
+//           message: "user export list",
+//           data: userdata,
+//         });
+//       } else {
+//         res.send({
+//           status: false,
+//           message: "data not found",
+//           data: [],
+//         });
+//       }
+ 
+//     })
+//     .catch((e) => {
+//       res.send(e);
+//     });
+
+
+// });
 
 app.get("/userlist", (req, res) => {
   User.find({})
@@ -923,6 +1184,8 @@ app.post("/adduser", (req, res) => {
           });
       })
 
+
+
   // check username 
   // User.find()
   //   .then((data) => {
@@ -1019,13 +1282,508 @@ app.post("/updateuser", (req, res) => {
           
         });
     })
-    
+});
+
+app.post("/self-intro-update", (req, res) => {
+
+  let user_id               = req.body.user_id;
+  let username              = req.body.username;
+  let status                = req.body.status;
+  let profile_status         = req.body.headline;
+  
+  let userdata = {'username'             : username,
+                  'status'               : status,
+                  'profile_status'       : profile_status
+                  }
+     
+    var myquery = { _id : user_id };
+    var newvalues = { $set: userdata };
+
+    User.updateOne(myquery, newvalues).then(() =>  {
+      res.send({
+        status: true,
+        message: "self-inro updated successfully"
+        
+      });           
+    }).catch((e)=>{
+      res.send({
+          status: false,
+          message: "Something went wrong!"+e
+          
+        });
+    })
+});
+
+app.post("/personal-mission-update", (req, res) => {
+  let user_id               = req.body.user_id;
+  let username              = req.body.username;
+  let status                = req.body.status;
+  let profile_status         = req.body.headline;
+  
+  let userdata = {'username'             : username,
+                  'status'               : status,
+                  'profile_status'       : profile_status
+                  }
+     
+    var myquery = { _id : user_id };
+    var newvalues = { $set: userdata };
+
+    User.updateOne(myquery, newvalues).then(() =>  {
+      res.send({
+        status: true,
+        message: "self-inro updated successfully"
+        
+      });           
+    }).catch((e)=>{
+      res.send({
+          status: false,
+          message: "Something went wrong!"+e
+          
+        });
+    })
+
 
 });
 
+app.post("/personal-highlights-update", (req, res) => {
+ 
+  let user_id = req.body.user_id;
+  let currently_working = req.body.currently_working;
+  let currently_studying = req.body.currently_studying;
+  let graduated_from = req.body.graduated_from;
+  let complete_highschool_at = req.body.complete_highschool_at;
+  let lives_in = req.body.lives_in;
+  let from = req.body.from;
+  let personal_information = req.body.personal_information;
+
+  
+  //************ time stamp **************//
+  let today = new Date();
+  let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date+' '+time;
+  //************ time stamp *************** */
+  
+
+  let highdata = {"user_id"           : user_id,
+                    "currently_working"   : currently_working,
+                    "currently_studying"  : currently_studying,
+                    "graduated_from"       : graduated_from,
+                    "complete_highschool_at" : complete_highschool_at,
+                    "lives_in"              : lives_in,
+                    "from"                  : from,
+                    "personal_information"  : personal_information,
+                    "created_at"            : dateTime
+                   }
+
+  const highlights = new Highlight(highdata);
+  highlights.save().then(() => {
+    res.send({
+      status: true,
+      message: "User highlights added successfully"
+      
+    });
+
+  }).catch((e)=>{
+    res.send({
+        status: false,
+        message: "Something went wrong!"+e
+        
+      });
+  })
+
+
+});
+
+app.post("/social-profile", (req, res) => {
+
+  let user_id = req.body.user_id;
+  let facebook = req.body.facebook;
+  let instagram = req.body.instagram;
+  let snapchat = req.body.snapchat;
+  let twitter = req.body.twitter;
+  let linkedIn = req.body.linkedIn;
+
+  let socialdata = {"user_id" : user_id,
+                    "facebook" : facebook,
+                    "instagram" : instagram,
+                    "snapchat" : snapchat,
+                    "twitter"  : twitter,
+                    "linkedIn" : linkedIn
+                   }
+
+  const user_social_profile = new User_social_profile(socialdata);
+  user_social_profile.save().then(() => {
+    res.send({
+      status: true,
+      message: "social profile added successfully"
+      
+    });
+
+  }).catch((e)=>{
+    res.send({
+        status: false,
+        message: "Something went wrong!"+e
+        
+      });
+  })
+
+
+
+});
+
+app.post("/user-interest-update", (req, res) => {
+  let user_id = req.body.user_id;
+  let interest_name = req.body.interest_name;
+
+  
+  //************ time stamp **************//
+  let today = new Date();
+  let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date+' '+time;
+  //************ time stamp *************** */
+  
+
+  let interestdata = {"user_id" : user_id,
+                    "interest_name" : interest_name,
+                    "created_at" : dateTime
+                   }
+
+  const interest = new Interest(interestdata);
+  interest.save().then(() => {
+    res.send({
+      status: true,
+      message: "user interest added successfully"
+      
+    });
+
+  }).catch((e)=>{
+    res.send({
+        status: false,
+        message: "Something went wrong!"+e
+        
+      });
+  })
+
+
+});
+
+app.post("/user-languages-update", (req, res) => {
+  let user_id = req.body.user_id;
+  let language_name = req.body.language_name;
+
+  //************ time stamp **************//
+  let today = new Date();
+  let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date+' '+time;
+  //************ time stamp *************** */
+  
+  let langdata = {"user_id" : user_id,
+                    "language_name" : language_name,
+                    "created_at" : dateTime
+                   }
+
+  const language = new Language(langdata);
+  language.save().then(() => {
+    res.send({
+      status: true,
+      message: "User Language added successfully"
+      
+    });
+
+  }).catch((e)=>{
+    res.send({
+        status: false,
+        message: "Something went wrong!"+e
+        
+      });
+  })
+
+
+});
+
+app.post("/user-course-update", (req, res) => {
+  let user_id = req.body.user_id;
+  let name = req.body.name;
+
+  //************ time stamp **************//
+  let today = new Date();
+  let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date+' '+time;
+  //************ time stamp *************** */
+  
+  let coursedata = {"user_id" : user_id,
+                    "name" : name,
+                    "created_at" : dateTime
+                   }
+
+  const user_course = new User_course(coursedata);
+  user_course.save().then(() => {
+    res.send({
+      status: true,
+      message: "User Course added successfully"
+      
+    });
+
+  }).catch((e)=>{
+    res.send({
+        status: false,
+        message: "Something went wrong!"+e
+        
+      });
+  })
+
+
+});
+
+
+
+app.post("/education-list", (req, res) => {
+  let user_id = req.body.user_id;
+  Education.find({user_id : user_id})
+    .then((data) => {
+      let userdata = data;
+      if(userdata.length > 0) {
+        res.send({
+          status: true,
+          message: "Education list",
+          data: userdata,
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "data not found",
+          data: [],
+        });
+      }
+  
+    })
+    .catch((e) => {
+      res.send(e);
+    });
+
+
+});
+
+app.post("/add-education", (req, res) => {
+  let user_id           = req.body.user_id;
+  let college_name      = req.body.college_name;
+  let concentration     = req.body.concentration;
+  let degree            = req.body.degree;
+  let club_society      = req.body.club_society;
+  let grade             = req.body.grade;
+  let start_date        = req.body.start_date;
+  let end_date          = req.body.end_date;
+
+  
+  
+  //************ time stamp **************//
+  let today = new Date();
+  let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date+' '+time;
+  //************ time stamp *************** */
+
+  let eduData = {   "user_id"        : user_id,
+                    "college_name"   : college_name,
+                    "image"          : "",
+                    "concentration"  : concentration,
+                    "degree"         : degree,
+                    "club_society"   : club_society,
+                    "grade"           : grade,
+                    "start_date"      : start_date,
+                    "end_date"        : end_date,
+                    "created_at"      : dateTime
+                    };
+
+  let education = new Education(eduData);
+  education.save().then(() => {
+    res.send(
+          { status : true, 
+            message: 'Education added successfully'
+          }
+          );
+
+    }).catch((e)=>{
+      res.send(
+        { 
+          status : false, 
+          message: 'failed to save Education '+e
+        }
+      );
+    })
+
+
+});
+
+app.post("/experience-list", (req, res) => {
+  let user_id = req.body.user_id;
+  Experience.find({user_id : user_id})
+    .then((data) => {
+      let userdata = data;
+      if(userdata.length > 0) {
+        res.send({
+          status: true,
+          message: "Experience list",
+          data: userdata,
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "data not found",
+          data: [],
+        });
+      }
+  
+    })
+    .catch((e) => {
+      res.send(e);
+    });
+
+
+});
+
+app.post("/add-experience", (req, res) => {
+  let user_id           = req.body.user_id;
+  let company_name      = req.body.company_name;
+  let emp_type          = req.body.emp_type;
+  let industry          = req.body.industry;
+  let designation       = req.body.designation;
+  let location          = req.body.location;
+  let start_date        = req.body.start_date;
+  let end_date          = req.body.end_date;
+
+  
+  
+  //************ time stamp **************//
+  let today = new Date();
+  let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date+' '+time;
+  //************ time stamp *************** */
+
+  let expData = {   "user_id"        : user_id,
+                    "company_name"    :  company_name,
+                    "image"           : "",
+                    "emp_type"        : emp_type,
+                    "industry"        : industry,
+                    "designation"     : designation,
+                    "location"        : location,
+                    "start_date"      : start_date,
+                    "end_date"        : end_date,
+                    "created_at"      : dateTime
+                    };
+
+  let experience = new Experience(expData);
+  experience.save().then(() => {
+    res.send(
+          { status : true, 
+            message: 'Experience added successfully'
+          }
+          );
+
+    }).catch((e)=>{
+      res.send(
+        { 
+          status : false, 
+          message: 'failed to save Experience '+e
+        }
+      );
+    })
+
+
+});
+
+app.post("/achievements-list", (req, res) => {
+  let user_id = req.body.user_id;
+  Achievement.find({user_id : user_id})
+    .then((data) => {
+      let userdata = data;
+      if(userdata.length > 0) {
+        res.send({
+          status: true,
+          message: "Achievements list",
+          data: userdata,
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "data not found",
+          data: [],
+        });
+      }
+  
+    })
+    .catch((e) => {
+      res.send(e);
+    });
+
+});
+
+app.post("/add-achievements", (req, res) => {
+  let user_id           = req.body.user_id;
+  let certificate_name  = req.body.certificate_name;
+  let offered_by        = req.body.offered_by;
+  let offered_date      = req.body.offered_date;
+  let duration          = req.body.duration;
+  
+  //************ time stamp **************//
+  let today = new Date();
+  let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date+' '+time;
+  //************ time stamp *************** */
+
+  let achieveData = {"user_id"          : user_id,
+                    "certificate_name"  :  certificate_name,
+                    "offered_by"        : offered_by,
+                    "offered_date"      : offered_date,
+                    "duration"          : duration,
+                    "created_at"        : dateTime
+                    };
+
+  let achievement = new Achievement(achieveData);
+  achievement.save().then(() => {
+    res.send(
+          { status : true, 
+            message: 'Achievements added successfully'
+          }
+          );
+
+    }).catch((e)=>{
+      res.send(
+        { 
+          status : false, 
+          message: 'failed to save Achievements '+e
+        }
+      );
+    })
+
+});
+
+
+
 app.post("/deleteuser", (req, res) => {
-
-
+  let user_id    = req.body.user_id;
+  User.remove({ _id : user_id })
+    .then(() => {
+      res.send({
+          status: true,
+          message: "User has been deleted"
+          
+        });
+     
+    })
+    .catch((e) => {
+      res.send({
+        status: false,
+        message: "user has failed to delete"
+        
+      });
+    });
 
 });
 
@@ -1058,6 +1816,45 @@ app.get("/deleteuserlist", (req, res) => {
 
 app.post("/show_friends", (req, res) => {
   let user_id = req.body.user_id;
+  Friend_lists.find({user_id : user_id})
+    .then((data) => {
+      let userdata = data;
+      if(userdata.length > 0) {
+        // userdata.forEach(function(u,i){
+        //   var users = [];
+        //   User.find({_id: userdata[i].user_id }, function(err, j) {
+        //       if (err) throw err;
+        //       if (!u) {
+        //           res.end(JSON.stringify({
+        //               status: 'failed:Auction not found.',
+        //               error_code: '404'
+        //           }));
+        //           console.log("User not found.");
+        //           return 
+        //       }
+        //       userdata[i].name.push(j);
+        //   })
+        // })
+        
+        res.send({
+          status: true,
+          message: "Friend list",
+          data: userdata,
+        });
+
+
+      } else {
+        res.send({
+          status: false,
+          message: "data not found",
+          data: [],
+        });
+      }
+  
+    })
+    .catch((e) => {
+      res.send(e);
+    });
 
   // find all user friend id list 
 
@@ -1066,6 +1863,1268 @@ app.post("/show_friends", (req, res) => {
 
 
 });
+
+//**************** Category apis ******************************* */
+
+app.get("/category-list", (req, res) => {
+  Categories.find()
+    .then((data) => {
+      let categorydata = data;
+      if(categorydata.length > 0) {
+
+        res.send({
+          status: true,
+          message: "Category list",
+          data: categorydata,
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "data not found",
+          data: [],
+        });
+      }
+  
+    })
+    .catch((e) => {
+      res.send(e);
+    });
+
+
+  
+});
+
+app.post("/add-category", multer({ storage : storage}).single('image'), (req, res) => {
+ 
+  let name = req.body.name;
+  let image = req.body.image;
+  let status = req.body.status;
+
+  //************  time stamp  **************************/
+  let today = new Date();
+  let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date+' '+time;
+
+  let imagedata = req.file;
+  //console.log(req.file);
+
+  //************  time stamp  **************************/
+
+  // need to upload image //
+
+
+  let categorydata = {"name" :  name,
+                      "image" : imagedata.filename,
+                      "status" : status,
+                      "created_at" : dateTime,
+                      "updated_at" : dateTime
+                    };
+
+    const category = new Categories(categorydata);
+      category.save().then(() => {
+          res.send(
+                { status : true, 
+                  message: 'Category added successfully'
+                }
+                );
+
+          }).catch((e)=>{
+            res.send(
+              { 
+                status : false, 
+                message: 'failed to save category '+e
+              }
+            );
+          })
+   
+});
+
+app.post("/get-category", (req, res) => {
+  let catid = req.body.id;
+
+  Categories.find({ _id: catid }) 
+  .then((data) => {
+    let catData = data;
+    if(catData.length > 0) {
+
+      res.send({
+        status: true,
+        message: "Category details",
+        data: catData,
+      });
+    } else {
+      res.send({
+        status: false,
+        message: "data not found",
+        data: [],
+      });
+    }
+
+  })
+  .catch((e) => {
+    res.send(e);
+  });
+ 
+});
+
+app.put("/update-category", (req, res) => {
+  
+  let id               = req.body.id;
+  let name             = req.body.name;
+  let image           = req.body.image;
+  let status          = req.body.status;
+  
+  //************  time stamp  **************************/
+  let today = new Date();
+  let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date+' '+time;
+
+  //************  time stamp  **************************/
+
+  let userdata = {'name'      : name,
+                  'image'     : image,
+                  'status'    : status,
+                  'updated_at': dateTime
+                  };
+
+     
+    var myquery = { _id : id };
+    var newvalues = { $set: userdata };
+
+    Categories.updateOne(myquery, newvalues).then(() =>  {
+      res.send({
+        status: true,
+        message: "Category updated successfully"
+        
+      });           
+    }).catch((e)=>{
+      res.send({
+          status: false,
+          message: "Something went wrong!"+e
+          
+          
+        });
+    })
+
+});
+
+
+app.post("/delete-category", (req, res) => {
+  let catid = req.body.id;
+  Categories.remove({ _id : catid })
+    .then(() => {
+      res.send({
+          status: true,
+          message: "Category has been deleted"
+          
+        });
+     
+    })
+    .catch((e) => {
+      res.send({
+        status: false,
+        message: "Category has failed to delete"
+        
+      });
+    });
+
+});
+
+//**************** Category apis  ends ******************************* */
+
+app.get("/about-us", (req, res) => {
+ About.find()
+    .then((data) => {
+      let aboutusData = data;
+      if(aboutusData.length > 0) {
+        res.send({
+          status: true,
+          message: "About us",
+          data: aboutusData,
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "data not found",
+          data: [],
+        });
+      }
+  
+    })
+    .catch((e) => {
+      res.send(e);
+    });
+});
+
+app.put("/update-about-us", (req, res) => {
+
+  let id = req.body._id;
+  let about_us = req.body.about_us;
+  let updated_at = req.body.updated_at;
+  let data = {};
+    if(about_us != "") {
+       data = {"about_us" : about_us,
+                  "updated_at" : updated_at
+                };
+    }
+    else {
+       data = {"updated_at" : updated_at };
+    }
+    var myquery = { _id : id };
+    var newvalues = { $set: data };
+
+    About.updateOne(myquery, newvalues).then(() =>  {
+      res.send({
+        status: true,
+        message: "About us updated successfully"
+        
+      });           
+    }).catch((e)=>{
+      res.send({
+          status: false,
+          message: "Something went wrong!"+e
+          
+        });
+    })
+
+ });
+
+
+ app.post("/update-account-info", (req, res) => {
+  let user_id = req.body.user_id;
+  let first_name = req.body.first_name
+  let last_name = req.body.last_name
+
+    let userdata = {"first_name"  : first_name,
+                  "last_name" : last_name
+
+                  };
+
+    var myquery = { _id : user_id };
+    var newvalues = { $set: userdata };
+
+    Admin_users.updateOne(myquery, newvalues).then(() =>  {
+      res.send({
+        status: true,
+        message: "password  change successfully"
+        
+      });           
+    }).catch((e)=>{
+      res.send({
+          status: false,
+          message: "Something went wrong!"+e
+          
+        });
+    })
+
+});
+
+
+ 
+app.post("/change-password", (req, res) => {
+  let user_id = req.body.user_id;
+  let new_password = req.body.new_password;
+
+    let userdata = {"password"         : new_password,
+                  "password_show"       : new_password
+
+                  };
+
+    var myquery = { _id : user_id };
+    var newvalues = { $set: userdata };
+                  
+    Admin_users.updateOne(myquery, newvalues).then(() =>  {
+      res.send({
+        status: true,
+        message: "password  change successfully"
+        
+      });           
+    }).catch((e)=>{
+      res.send({
+          status: false,
+          message: "Something went wrong!"+e
+          
+        });
+    })
+
+});
+
+
+app.post("/profile-pic",  multer({ storage : storage}).single('profile_image'), (req, res) => {
+
+  let user_id = req.body.user_id;
+  let filedata = req.file;
+
+  let profiledata = {"profile_image" : filedata.filename
+
+                    };
+  var myquery = { _id : user_id };
+    var newvalues = { $set: profiledata };
+
+    Admin_users.updateOne(myquery, newvalues).then(() =>  {
+      res.send({
+        status: true,
+        message: "profile image update successfully"
+        
+      });           
+    }).catch((e)=>{
+      res.send({
+          status: false,
+          message: "Something went wrong!"+e
+          
+        });
+    })
+
+  }); 
+
+
+app.post("/contact-us", (req, res) => {
+  let user_id = req.body.user_id;
+  Contact_us.find({user_id : user_id})
+    .then((data) => {
+      let contactusdata = data;
+      if(contactusdata.length > 0) {
+        res.send({
+          status: true,
+          message: "Contact us list",
+          data: contactusdata,
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "data not found",
+          data: [],
+        });
+      }
+  
+    })
+    .catch((e) => {
+      res.send(e);
+    });
+});
+
+
+
+app.post("/Feedback-list", (req, res) => {
+  let user_id = req.body.user_id;
+  Feedback.find({user_id : user_id})
+    .then((data) => {
+      let feedbackdata = data;
+      if(feedbackdata.length > 0) {
+        res.send({
+          status: true,
+          message: "Feedback list",
+          data: feedbackdata,
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "data not found",
+          data: [],
+        });
+      }
+  
+    })
+    .catch((e) => {
+      res.send(e);
+    });
+});
+
+
+//**************** Brand apis ******************************* */
+app.get("/brands-list", (req, res) => {
+  Brands.find()
+    .then((data) => {
+      let bdata = data;
+      if(bdata.length > 0) {
+        res.send({
+          status: true,
+          message: "Brand list",
+          data: bdata,
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "data not found",
+          data: [],
+        });
+      }
+  
+    })
+    .catch((e) => {
+      res.send(e);
+    });
+});
+
+app.post("/add-brand", (req, res) => {
+
+  let categories_id   =  req.body.categories_id;
+  let brand_name      =  req.body.brand_name;
+  let description     =  req.body.description;
+  let image           =  req.body.image;
+  let type            =  req.body.type;
+  let facebook        =  req.body.facebook;
+  let instagram       =  req.body.instagram;
+  let twitter         =  req.body.twitter;
+  let status          =  req.body.status; 
+
+  
+  //************  time stamp  **************************/
+  let today = new Date();
+  let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date+' '+time;
+
+  //************  time stamp  **************************/
+
+  let branddata = {"categories_id" : categories_id,
+                  "brand_name"     : brand_name,
+                  "description"    : description,
+                  "image"          : image,
+                  "type"           : type,
+                  "facebook"       : facebook,
+                  "instagram"      : instagram,
+                  "twitter"        : twitter,
+                  "status"        : status,
+                  "created_at"    : dateTime,
+                  "updated_at"    : dateTime
+
+                };
+      const brands = new Brands(branddata);
+      brands.save().then(() => {
+        res.send(
+              { status : true, 
+                message: 'Brand added successfully'
+              }
+              );
+
+        }).catch((e)=>{
+          res.send(
+            { 
+              status : false, 
+              message: 'failed to add Brand '+e
+            }
+          );
+        })  
+  });
+
+  
+app.post("/get-brand", (req, res) => {
+  let brandid = req.body.brandid;
+    Brands.find({ _id: brandid }) 
+    .then((data) => {
+      let branddata = data;
+      if(branddata.length > 0) {
+         res.send({
+          status: true,
+          message: "Brand details",
+          data: branddata,
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "data not found",
+          data: [],
+        });
+      }
+    })
+    .catch((e) => {
+      res.send(e);
+    });
+
+});
+
+
+app.put("/update-brand", (req, res) => {
+
+  let id              =  req.body.id;
+  let categories_id   =  req.body.categories_id;
+  let brand_name      =  req.body.brand_name;
+  let description     =  req.body.description;
+  let image           =  req.body.image;
+  let type            =  req.body.type;
+  let facebook        =  req.body.facebook;
+  let instagram       =  req.body.instagram;
+  let twitter         =  req.body.twitter;
+  let status          =  req.body.status; 
+
+  
+  //************  time stamp  **************************/
+  let today = new Date();
+  let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date+' '+time;
+
+  //************  time stamp  **************************/
+
+  let branddata = {"categories_id" : categories_id,
+                  "brand_name"     : brand_name,
+                  "description"    : description,
+                  "image"          : image,
+                  "type"           : type,
+                  "facebook"       : facebook,
+                  "instagram"      : instagram,
+                  "twitter"        : twitter,
+                  "status"        : status,
+                  "updated_at"    : dateTime
+
+                };
+      var myquery = { _id : id };
+      var newvalues = { $set: branddata };
+
+      Brands.updateOne(myquery, newvalues).then(() =>  {
+        res.send({
+          status: true,
+          message: "Brand updated successfully"
+          
+        });           
+      }).catch((e)=>{
+        res.send({
+            status: false,
+            message: "Something went wrong!"+e
+            
+          });
+      })
+       
+  });
+
+  
+app.post("/delete-brand", (req, res) => {
+  let brandid = req.body.id;
+  Brands.remove({ _id : brandid })
+    .then(() => {
+      res.send({
+          status: true,
+          message: "Brand has been deleted"
+          
+        });
+     
+    })
+    .catch((e) => {
+      res.send({
+        status: false,
+        message: "Brand has failed to delete"
+        
+      });
+    });
+
+});
+
+
+app.get("/brand-banner-list", (req, res) => {
+  Brand_banner.find()
+    .then((data) => {
+      let bdata = data;
+      if(bdata.length > 0) {
+        res.send({
+          status: true,
+          message: "Brand banner list",
+          data: bdata,
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "data not found",
+          data: [],
+        });
+      }
+  
+    })
+    .catch((e) => {
+      res.send(e);
+    });
+});
+
+
+
+//**************** Brand apis  ends ************************** */
+
+//**************** Blog apis ******************************* */
+
+
+app.get("/blogs-list", (req, res) => {
+  Blogs.find()
+    .then((data) => {
+      let blogsdata = data;
+      if(blogsdata.length > 0) {
+        res.send({
+          status: true,
+          message: "Blog list",
+          data: blogsdata,
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "data not found",
+          data: [],
+        });
+      }
+  
+    })
+    .catch((e) => {
+      res.send(e);
+    });
+});
+
+
+
+app.get("/blog-banner-list", (req, res) => {
+  Blog_banner.find()
+    .then((data) => {
+      let blogbannerdata = data;
+      if(blogbannerdata.length > 0) {
+        res.send({
+          status: true,
+          message: "Blog banner list",
+          data: blogbannerdata,
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "data not found",
+          data: [],
+        });
+      }
+  
+    })
+    .catch((e) => {
+      res.send(e);
+    });
+});
+
+app.post("/add-blog", (req, res) => {
+  let categories_id =  req.body.categories_id;
+  let title         =  req.body.title;
+  let description   =  req.body.description;
+  let image         =  req.body.image;
+  let shared_by     =  req.body.shared_by;
+  let writer_image  =  req.body.writer_image;
+  let video_link    =  req.body.video_link;
+  let slider        =  req.body.slider;
+  let status        =  req.body.status; 
+
+  
+  //************  time stamp  **************************/
+  let today = new Date();
+  let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date+' '+time;
+
+  //************  time stamp  **************************/
+
+  let blogdata = {"categories_id" : categories_id,
+                  "title"         : title,
+                  "description"   : description,
+                  "image"         : image,
+                  "shared_by"     : shared_by,
+                  "writer_image"  : writer_image,
+                  "video_link"    : video_link,
+                  "slider"        : slider,
+                  "status"        : status,
+                  "created_at"    : dateTime,
+                  "updated_at"    : dateTime
+
+                };
+      const blogs = new Blogs(blogdata);
+      blogs.save().then(() => {
+        res.send(
+              { status : true, 
+                message: 'Blog added successfully'
+              }
+              );
+
+        }).catch((e)=>{
+          res.send(
+            { 
+              status : false, 
+              message: 'failed to add Blog '+e
+            }
+          );
+        })  
+
+  
+});
+
+app.post("/get-blog", (req, res) => {
+  let blogid = req.body.blogid;
+  Blogs.find({ _id: blogid }) 
+  .then((data) => {
+    let blogdata = data;
+    if(blogdata.length > 0) {
+
+      res.send({
+        status: true,
+        message: "Blog details",
+        data: blogdata,
+      });
+    } else {
+      res.send({
+        status: false,
+        message: "data not found",
+        data: [],
+      });
+    }
+
+  })
+  .catch((e) => {
+    res.send(e);
+  });
+
+});
+
+app.post("/update-blog", (req, res) => {
+  let id            =  req.body.id;
+  let categories_id =  req.body.categories_id;
+  let title         =  req.body.title;
+  let description   =  req.body.description;
+  let image         =  req.body.image;
+  let shared_by     =  req.body.shared_by;
+  let writer_image  =  req.body.writer_image;
+  let video_link    =  req.body.video_link;
+  let slider        =  req.body.slider;
+  let status        =  req.body.status; 
+
+  
+  //************  time stamp  **************************/
+  let today = new Date();
+  let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date+' '+time;
+
+  //************  time stamp  **************************/
+
+  let blogdata = {"categories_id" : categories_id,
+                  "title"         : title,
+                  "description"   : description,
+                  "image"         : image,
+                  "shared_by"     : shared_by,
+                  "writer_image"  : writer_image,
+                  "video_link"    : video_link,
+                  "slider"        : slider,
+                  "status"        : status,
+                  "updated_at"    : dateTime
+
+                };
+    var myquery = { _id : id };
+    var newvalues = { $set: blogdata };
+
+    Blogs.updateOne(myquery, newvalues).then(() =>  {
+      res.send({
+        status: true,
+        message: "Blog updated successfully"
+        
+      });           
+    }).catch((e)=>{
+      res.send({
+          status: false,
+          message: "Something went wrong!"+e
+          
+        });
+    })
+
+
+});
+
+app.post("/delete-blog", (req, res) => {
+  let blogid = req.body.id;
+  Blogs.remove({ _id : blogid })
+    .then(() => {
+      res.send({
+          status: true,
+          message: "Blog has been deleted"
+          
+        });
+     
+    })
+    .catch((e) => {
+      res.send({
+        status: false,
+        message: "Blog has failed to delete"
+        
+      });
+    });
+
+});
+
+//**************** Blog apis ends ******************************* */
+
+
+app.post("/export-blog", (req, res) => {
+
+
+});
+
+
+//**************** Blog apis  ends ******************************* */
+
+
+//**************** Posts apis  ends ******************************* */
+
+
+app.get("/all-post-list", (req, res) => {
+  
+  Posts.find() 
+  .then((data) => {
+    let postdata = data;
+    if(postdata.length > 0) {
+
+      res.send({
+        status: true,
+        message: "all Post list",
+        data: postdata,
+      });
+    } else {
+      res.send({
+        status: false,
+        message: "data not found",
+        data: [],
+      });
+    }
+
+  })
+  .catch((e) => {
+    res.send(e);
+  });
+
+
+});
+
+
+app.post("/posts-list", (req, res) => {
+  let user_id = req.body.user_id;
+  Posts.find({ user_id: user_id }) 
+  .then((data) => {
+    let postdata = data;
+    if(postdata.length > 0) {
+
+      res.send({
+        status: true,
+        message: "Post list",
+        data: postdata,
+      });
+    } else {
+      res.send({
+        status: false,
+        message: "data not found",
+        data: [],
+      });
+    }
+
+  })
+  .catch((e) => {
+    res.send(e);
+  });
+
+
+});
+
+
+app.post("/add-post", multer({ storage : storage}).single('group_image'), (req, res) => {
+
+
+
+});
+
+
+
+
+
+app.post("/delete-post", (req, res) => {
+  let post_id    = req.body.post_id;
+  Posts.remove({ _id : post_id })
+    .then(() => {
+      res.send({
+          status: true,
+          message: "post has been deleted"
+          
+        });
+     
+    })
+    .catch((e) => {
+      res.send({
+        status: false,
+        message: "Post has failed to delete"
+        
+      });
+    });
+
+});
+
+
+
+
+//**************** Posts apis  ends ******************************* */
+
+
+app.get("/redeem-user-list", (req, res) => {
+  Redeem_user.find()
+    .then((data) => {
+      let redeemuserData = data;
+      if(redeemuserData.length > 0) {
+        res.send({
+          status: true,
+          message: "Redeem user list",
+          data: redeemuserData,
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "data not found",
+          data: [],
+        });
+      }
+  
+    })
+    .catch((e) => {
+      res.send(e);
+    });
+
+});
+
+
+
+app.post("/delete-redeem-user", (req, res) => {
+  let rid = req.body.rid;
+  Redeem_user.remove({ _id : rid })
+  .then(() => {
+    res.send({
+        status: true,
+        message: "Redeem user has been deleted"
+        
+      });
+   
+  })
+  .catch((e) => {
+    res.send({
+      status: false,
+      message: "Redeem user has failed to delete"
+      
+    });
+  });
+ 
+
+});
+
+
+
+app.get("/faq-list", (req, res) => {
+  Faqs.find()
+    .then((data) => {
+      let faqdata = data;
+      if(faqdata.length > 0) {
+        res.send({
+          status: true,
+          message: "Faq list",
+          data: faqdata,
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "data not found",
+          data: [],
+        });
+      }
+  
+    })
+    .catch((e) => {
+      res.send(e);
+    });
+});
+
+
+app.post("/add-faq", (req, res) => {
+  let question  = req.body.question;
+  let answer    = req.body.answer;
+  let status    = req.body.status;
+
+  
+  //************  time stamp  **************************/
+  let today = new Date();
+  let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date+' '+time;
+
+  //************  time stamp  **************************/
+  
+  let faqdata = {'questions'  : question,
+                  "answer"    : answer,
+                  "status"    : status,
+                  "created_at" : dateTime,
+                  "updated_at" : dateTime
+                };
+
+  const faqs = new Faqs(faqdata);
+    faqs.save().then(() => {
+        res.send({
+          status: true,
+          message: "Faq saved successfully"
+          
+        });
+
+      }).catch((e)=>{
+        res.send({
+            status: false,
+            message: "Something went wrong!"+e
+            
+          });
+      })
+
+
+
+});
+
+
+//************  group apis *************************/
+
+app.get("/group-list", (req, res) => {
+  Groups.find()
+    .then((data) => {
+      let groupdata = data;
+      if(groupdata.length > 0) {
+        res.send({
+          status: true,
+          message: "Group list",
+          data: groupdata,
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "data not found",
+          data: [],
+        });
+      }
+  
+    })
+    .catch((e) => {
+      res.send(e);
+    });
+});
+
+
+app.post("/add-group", multer({ storage : storage}).single('group_image'), (req, res) => {
+
+  let group_name          = req.body.group_name;
+  let university_group_id = req.body.university_group_id;
+  let created_by          = req.body.created_by;
+  let status              = req.body.status;
+  let groupfile           = req.file;
+  let groupusers          = req.body.groupusers;
+
+  
+  //************  time stamp  **************************/
+    let today = new Date();
+    let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+    let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    let dateTime = date+' '+time;
+
+  //************  time stamp  **************************/
+
+    let groupdata = {"group_name"         : group_name,
+                    "university_group_id" : university_group_id,
+                    "created_by"          : created_by,
+                    "group_image"         : groupfile.filename,
+                    "status"              : status,
+                    "created_at"          : dateTime,
+                    "updated_at"          : dateTime
+
+                    };   
+    const groups = new Groups(groupdata);
+    groups.save().then(() => {
+      res.send({
+        status: true,
+        message: "Group has been cretaed successfully"
+        
+      });
+    }).catch((e)=>{
+      res.send({
+          status: false,
+          message: "Something went wrong!"+e
+          
+        });
+    })       
+
+
+});
+
+
+
+//************  group apis ends *************************/
+
+
+app.get("/terms-conditions", (req, res) => {
+  Terms.find()
+    .then((data) => {
+      let termsdata = data;
+      if(termsdata.length > 0) {
+        res.send({
+          status: true,
+          message: "Term and Conditions",
+          data: termsdata,
+        });
+      } else {
+        res.send({
+          status: false,
+          message: "data not found",
+          data: [],
+        });
+      }
+  
+    })
+    .catch((e) => {
+      res.send(e);
+    });
+});
+
+app.put("/update-terms-conditions", (req, res) => {
+
+  let id = req.body._id;
+  let terms = req.body.terms;
+  let updated_at = req.body.updated_at;
+  let data = {};
+    if(terms != "") {
+       data = {"term_condition" : about_us,
+                  "updated_at" : updated_at
+                };
+    }
+    else {
+       data = {"updated_at" : updated_at };
+    }
+    var myquery = { _id : id };
+    var newvalues = { $set: data };
+
+    Terms.updateOne(myquery, newvalues).then(() =>  {
+      res.send({
+        status: true,
+        message: "Terms and Conditions updated successfully"
+        
+      });           
+    }).catch((e)=>{
+      res.send({
+          status: false,
+          message: "Something went wrong! "+e
+          
+        });
+    })
+
+ });
+
+
+ //***************  Blog banner  ****************************/
+
+ app.post("/add-blog-banner", multer({ storage : storage}).single('image'), (req, res) => {
+
+    let status    = req.body.status;
+    let imagedata = req.file;
+    
+    //************  time stamp  **************************/
+    let today = new Date();
+    let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+    let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    let dateTime = date+' '+time;
+
+    //************  time stamp  **************************/
+
+    let blogBannerData = {"status"        : status,
+                          "image"         : imagedata.filename,
+                          "created_date"  : dateTime
+                        
+                        };
+      const Blog_banner = new blog_banner(blogBannerData);
+      Blog_banner.save().then(() => {
+        res.send({
+          status: true,
+          message: "Blog banner saved successfully"
+          
+        });
+      }).catch((e)=>{
+        res.send({
+            status: false,
+            message: "Something went wrong!"+e
+            
+          });
+      })
+
+ });
+
+
+ 
+ app.post("/update-blog-banner", multer({ storage : storage}).single('image'), (req, res) => {
+
+  let bid    = req.body.bid;
+  let status    = req.body.status;
+  let imagedata = req.file;
+  
+  //************  time stamp  **************************/
+  let today = new Date();
+  let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date+' '+time;
+
+  //************  time stamp  **************************/
+
+  let blogBannerData = {"status"        : status,
+                        "image"         : imagedata.filename,
+                        "created_date"  : dateTime
+                      
+                      };
+
+    var myquery = { _id : bid };
+    var newvalues = { $set: blogBannerData };
+
+    Blog_banner.updateOne(myquery, newvalues).then(() =>  {
+      res.send({
+        status: true,
+        message: "Blog banner updated successfully"
+        
+      });           
+    }).catch((e)=>{
+      res.send({
+          status: false,
+          message: "Something went wrong! "+e
+          
+        });
+    })
+  });
+
+
+  app.post("/delete-blog-banner", (req, res) => {
+    let bid = req.body.bid;
+    Blog_banner.remove({ _id : bid })
+      .then(() => {
+        res.send({
+            status: true,
+            message: "Blog banner has been deleted"
+            
+          });
+       
+      })
+      .catch((e) => {
+        res.send({
+          status: false,
+          message: "Blog banner has failed to delete"
+          
+        });
+      });
+  
+  });
+
+
+ //***************  Blog Banner ends *********************** */
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

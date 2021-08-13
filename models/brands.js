@@ -18,19 +18,20 @@ var brandsSchema = new Schema({
     },
     type : {
         type : String,
-        required : false
+        required : false,
+        default : "online"
 
     },
     description : {
-        type : Number,
-        required : false,
-        default : 1
+        type : String,
+        required : false
+       
 
     },
     facebook : {
-        type : Number,
-        required : false,
-        default : 0
+        type : String,
+        required : false
+       
 
     },
     instagram : {

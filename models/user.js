@@ -21,12 +21,12 @@ var userSchema = new Schema({
   },
   degree: {
     type: String,
-    required: true
+    required: false
 
   },
   programme_name: {
     type: String,
-    required: true
+    required: false
 
   },
   current_year: {
@@ -97,7 +97,7 @@ var userSchema = new Schema({
 
   email :{
     type : String,
-    required : true
+    required : false
   },
   referral_Code: {
     type: String,

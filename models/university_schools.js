@@ -36,4 +36,4 @@ var university_schoolsSchema = new Schema({
  
 }, { collection: 'university_schools' });
 
-module.exports = mongoose.model('Highlights', university_schoolsSchema);
+module.exports = mongoose.model('University_schools', university_schoolsSchema);

@@ -31,7 +31,7 @@ var highlightsSchema = new Schema({
   },
    from: {
     type: String,
-    required: true
+    required: false
   },
    personal_information: {
     type: String,

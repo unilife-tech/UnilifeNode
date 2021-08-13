@@ -6,8 +6,17 @@ var universitychema = new Schema({
    
     university_name: {
       type: String,
+      required: false
+    },
+    university_id: {
+      type: String,
       required: true
-    }    
+    },
+    domain: {
+      type: String,
+      required: false
+    },
+
 
   }, { collection: 'university_tbl' });
   
