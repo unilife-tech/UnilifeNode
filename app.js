@@ -764,7 +764,7 @@ app.post("/get_all_profile_data", async function (req, res) {
   var response = [];
   var university_school_id = "";
 
-  uid = "61007100f48a652d280f7254";
+  let uid = user_id;
   let unilife_user_name = "";
   let profile_banner_image = "";
   let university_schools_name = "";
@@ -785,8 +785,7 @@ app.post("/get_all_profile_data", async function (req, res) {
 
   })
 
-  console.log(obj);
-
+  
   await University_schools.find({ _id: university_school_id }).then((unidata) => {
 
 
@@ -868,17 +867,18 @@ app.post("/homepage_data", async function (req, res) {
   if (user_id != '') {
     // friend list//
     await Friend_lists.find({ user_id: user_id }).then((ufriend) => {
+
       udata = ufriend;
 
     });
 
     await User.find({ _id: user_id }).then((userdata) => {
-      // console.log(userdata);
+       
       let up_id = userdata[0].university_school_id;
 
       User.find({ university_school_id: up_id }, { "_id": 1 }).then((domaindata) => {
         same_domain = domaindata;
-
+        
         // same domain user_id //
         if (same_domain.length > 0) {
 
@@ -899,7 +899,7 @@ app.post("/homepage_data", async function (req, res) {
 
     //{"address.current":{$in:["Jupitor", "Mars"]}}
 
-    Posts.find({ _id: user_id }, {
+    Posts.find({ user_id: user_id }, {
       "_id": 1, "admin_id": 1, "user_id": 1, "university_post_id": 1, "caption": 1, "location_name": 1,
       "post_through_group": 1, "group_id": 1, "status": 1,
       "type": 1, "question": 1, "event_title": 1, "event_link": 1, "event_description": 1,
@@ -914,16 +914,30 @@ app.post("/homepage_data", async function (req, res) {
       //`type` != '' )
       // Posts.find({$and: [  ["type !=", '' ], [ {"university_post_id": up_id} ] ]}, {"_id":1, "admin_id":1,"user_id": 1,"university_post_id":1,"caption":1,"location_name":1,"post_through_group":1,"group_id":1,"status":1,"type":1,"question":1,"event_title":1,"event_link":1,"event_description":1,"created_at":1  }).then((pdata) => {
 
-      console.log(userpost);
+      //console.log(userpost);
 
       // });
-      res.send({
-        status: true,
-        ws: ws,
-        message: "Successfully",
-        data: userpost
+      if(userpost.length > 0) {
+        res.send({
+          status: true,
+          ws: ws,
+          message: "Successfully",
+          data: { post : userpost,
+                  f_list : f_list
+  
+                }
+  
+        });
 
-      });
+      }
+      else {
+        res.send({
+          userpost : userpost
+  
+        });
+
+      }
+      
 
     });
   }
