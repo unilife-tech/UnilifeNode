@@ -154,19 +154,23 @@ app.get('/university-list', (req, res) => {
         res.send({
           status: true,
           message: "university list",
-          data: userdata,
+          data: userdata
         });
       }
       else {
         res.send({
           status: false,
           message: "data not found",
-          data: [],
+          data: []
         });
       }
     })
     .catch((e) => {
-      res.send(e);
+      res.send({
+        status: false,
+        message: "error"+e,
+        data: []
+      });
     });
 
 });
@@ -257,10 +261,6 @@ app.post("/delete-university-school", (req, res) => {
 
 
 
-
-
-
-
 app.get('/degree-list', (req, res) => {
 
   Degree.find()
@@ -271,19 +271,23 @@ app.get('/degree-list', (req, res) => {
         res.send({
           status: true,
           message: "university list",
-          data: userdata,
+          data: userdata
         });
       } else {
         res.send({
           status: false,
           message: "data not found",
-          data: [],
+          data: []
         });
       }
 
     })
     .catch((e) => {
-      res.send(e);
+      res.send({
+        status: false,
+        message: "error"+e,
+        data: []
+      });
     });
 
 
@@ -298,19 +302,23 @@ app.get('/year-list', (req, res) => {
         res.send({
           status: true,
           message: "Years list",
-          data: userdata,
+          data: userdata
         });
       } else {
         res.send({
           status: false,
           message: "data not found",
-          data: [],
+          data: []
         });
       }
 
     })
     .catch((e) => {
-      res.send(e);
+      res.send({
+        status: false,
+        message: "error"+e,
+        data: []
+      });
     });
 
 
@@ -325,19 +333,23 @@ app.get('/programme-list', (req, res) => {
         res.send({
           status: true,
           message: "Programme list",
-          data: userdata,
+          data: userdata
         });
       } else {
         res.send({
           status: false,
           message: "data not found",
-          data: [],
+          data: []
         });
       }
 
     })
     .catch((e) => {
-      res.send(e);
+      res.send({
+        status: false,
+        message: "error"+e,
+        data: []
+      });
     });
 
 
@@ -352,19 +364,23 @@ app.get('/country-list', (req, res) => {
         res.send({
           status: true,
           message: "Country list",
-          data: userdata,
+          data: userdata
         });
       } else {
         res.send({
           status: false,
           message: "data not found",
-          data: [],
+          data: []
         });
       }
 
     })
     .catch((e) => {
-      res.send(e);
+      res.send({
+        status: false,
+        message: "error"+e,
+        data: []
+      });
     });
 
 
@@ -468,12 +484,20 @@ app.post('/signup-user', (req, res) => {
 
     }).catch((e) => {
 
-      res.send(e);
+      res.send({
+        status: false,
+        message: "error"+e,
+        data: []
+      });
     })
 
   }).catch((e) => {
     // res.send({ status : false, message: 'user has faied to signup ', data: []});
-    res.send(e);
+    res.send({
+      status: false,
+      message: "error"+e,
+      data: []
+    });
   })
 
 
@@ -583,7 +607,11 @@ app.post('/useremailverify', (req, res) => {
       }
     })
     .catch((e) => {
-      res.send(e);
+      res.send({
+        status: false,
+        message: "error"+e
+        
+      });
     });
 
 
@@ -660,13 +688,17 @@ app.post("/otp_verify", (req, res) => {
         res.send({
           status: false,
           message: "Incorrect OTP",
-          data: {},
+          data: {}
         });
       }
     })
     .catch((e) => {
 
-      res.send(e);
+      res.send({
+        status: false,
+        message: "error"+e,
+        data: {}
+      });
     });
 });
 
@@ -685,18 +717,22 @@ app.post("/get_uni_id_using_domain", (req, res) => {
         res.send({
           status: true,
           message: "domain is verified",
-          data: domaindata,
+          data: domaindata
         });
       } else {
         res.send({
           status: false,
           message: "domain is not verified",
-          data: [],
+          data: []
         });
       }
     })
     .catch((e) => {
-      res.send(e);
+      res.send({
+        status: false,
+        message: "error"+e,
+        data: []
+      });
     });
 });
 
@@ -745,7 +781,11 @@ app.post("/get-url", (req, res) => {
       }
     })
     .catch((e) => {
-      res.send(e);
+      res.send({
+        status: false,
+        message: "error"+e
+        
+      });
     });
 });
 
@@ -771,81 +811,117 @@ app.post("/get_all_profile_data", async function (req, res) {
   let user_type = "";
   let profile_logo = "";
   let profile_image = "";
-
-
-  await User.find({ _id: uid }).then((data) => {
-
-    university_school_id = data[0].university_school_id;
-
-    unilife_user_name = data[0].username;
-    profile_banner_image = data[0].profile_banner_image;
-    university_schools_name = data[0].profile_banner_image;
-    user_type = data[0].user_type;
-
-
-  })
+  let university_school_email = "";
+  let username = "";
+  
+  let designation = "";
+  let organisation = "";
+  let personal_mission = "";
+  let personal_description = "";
 
   
-  await University_schools.find({ _id: university_school_id }).then((unidata) => {
+  if(user_id != '') {
+    
+     await User.find({ _id: uid }).then((data) => {
+
+      if(data.length > 0) {
+        university_school_id = data[0].university_school_id;
+
+        unilife_user_name = data[0].username;
+        profile_banner_image = data[0].profile_banner_image;
+        university_schools_name = data[0].profile_banner_image;
+        user_type = data[0].user_type;
+        university_school_email = data[0].university_school_email,
+        username = data[0].username,
+       
+        designation = data[0].designation,
+        organisation = data[0].organisation,
+        personal_mission = data[0].personal_mission,
+        personal_description = data[0].personal_description
+
+      }
+     
 
 
-  });
+    })
+    
+    if(university_school_id != "") {
+      await University_schools.find({ _id: university_school_id }).then((unidata) => {
+      
 
-  await Highlight.find({ user_id: user_id }).then((uhigh) => {
-    response['user_highlights'] = uhigh;
-  });
-
-  await Education.find({ user_id: user_id }).then((uedu) => {
-    response['user_education'] = uedu;
-  })
-
-  await Skills.find({ user_id: user_id }).then((uskills) => {
-    response['user_skills'] = uskills;
-  })
-
-  await Language.find({ user_id: user_id }).then((lang) => {
-    response['user_languages'] = lang;
-  })
-
-  await Achievement.find({ user_id: user_id }).then((achieve) => {
-    response['user_achievements'] = achieve;
-  })
-
-  await Interest.find({ user_id: user_id }).then((userInterest) => {
-    response['user_interest'] = userInterest;
-  })
-
-  await User_social_profile.find({ user_id: user_id }).then((social) => {
-    response['user_social_profile'] = social;
-  })
-
-  await Experience.find({ user_id: user_id }).then((course) => {
-    response['user_course'] = course;
-  })
-
-  res.send({
-    status: true,
-    message: "data Successfully",
-    respoonse: {
-      user_course: response['user_course'],
-      user_highlights: response['user_highlights'],
-      user_education: response['user_education'],
-      user_skills: response['user_skills'],
-      user_languages: response['user_languages'],
-      user_achievements: response['user_achievements'],
-      user_interest: response['user_interest'],
-      user_social_profile: response['user_social_profile']
-    },
-    self_intoduction: {
-      unilife_user_name: unilife_user_name,
-      profile_banner_image: profile_banner_image,
-      university_schools_name: university_schools_name,
-      user_type: user_type,
-      profile_logo: profile_logo,
-      profile_image: profile_image
+      });
 
     }
-  });
+  
+    
+
+    await Highlight.find({ user_id: user_id }).then((uhigh) => {
+      response['user_highlights'] = uhigh;
+    });
+
+    await Education.find({ user_id: user_id }).then((uedu) => {
+      response['user_education'] = uedu;
+    })
+
+    await Skills.find({ user_id: user_id }).then((uskills) => {
+      response['user_skills'] = uskills;
+    })
+
+    await Language.find({ user_id: user_id }).then((lang) => {
+      response['user_languages'] = lang;
+    })
+
+    await Achievement.find({ user_id: user_id }).then((achieve) => {
+      response['user_achievements'] = achieve;
+    })
+
+    await Interest.find({ user_id: user_id }).then((userInterest) => {
+      response['user_interest'] = userInterest;
+    })
+
+    await User_social_profile.find({ user_id: user_id }).then((social) => {
+      response['user_social_profile'] = social;
+    })
+
+    await Experience.find({ user_id: user_id }).then((course) => {
+      response['user_course'] = course;
+    })
+
+    res.send({
+      status: true,
+      message: "data Successfully",
+      respoonse: {
+        user_course: response['user_course'],
+        user_highlights: response['user_highlights'],
+        user_education: response['user_education'],
+        user_skills: response['user_skills'],
+        user_languages: response['user_languages'],
+        user_achievements: response['user_achievements'],
+        user_interest: response['user_interest'],
+        user_social_profile: response['user_social_profile']
+      },
+      self_intoduction: {
+        unilife_user_name: unilife_user_name,
+        profile_banner_image: profile_banner_image,
+        university_schools_name: university_schools_name,
+        user_type: user_type,
+        profile_logo: profile_logo,
+        profile_image: profile_image,
+        university_school_email : university_school_email,
+        username : username,
+        university_school_id : university_school_id,
+        designation : designation,
+        organisation : organisation,
+        personal_mission : personal_mission,
+        personal_description : personal_description
+        
+        
+
+      }
+    });
+    
+  }
+
 });
 
 
@@ -949,6 +1025,19 @@ app.post("/homepage_data", async function (req, res) {
 
     });
   }
+});
+
+
+
+app.post("/profile_imgs", async function (req, res) {
+  res.send({
+    status: true,
+    message: 'success',
+    ws: "profile_imgs",
+    data : "http://localhost:5000/../uploads/"
+  });
+
+
 });
 
 

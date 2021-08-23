@@ -37,7 +37,7 @@ var userSchema = new Schema({
   otp_verify : {
     type: String,
     required: false,
-    default: "no"
+    default: "yes"
     
     
 
