@@ -54,6 +54,13 @@ const Feedback = require('./models/feedback');
 const Terms = require('./models/term&conditions');
 const Redeem_user = require('./models/brands_redeem_user');
 const User_social_profile = require('./models/user_social_profile');
+const Posts_options  = require('./models/posts_options');
+
+const Report_user_post = require('./models/report_user_post');
+const Version = require('./models/version');
+
+
+
 // const university              = require('./models/university');
 
 
@@ -64,9 +71,9 @@ const User_social_profile = require('./models/user_social_profile');
 // chat, chat_rooms, chat_seen_unseen, chat_wallpaper, comments, comment_replies,
 // course_covered, delete_user_group_chat, domains,
 // friend_requests, group_users, hide_user, hobbies_interests, json_request,
-// management_section, notifications, our_teams, posts_options, post_comment_likes,
+// management_section, notifications, our_teams, post_comment_likes,
 // post_options_select_by_user, post_tag_groups, post_tag_users, profile_questions,
-// profile_user_answers, reply_contact_us, report_user_post, social_media_post,
+// profile_user_answers, reply_contact_us, social_media_post,
 // term&conditions, user_blog_saved, user_categories_profiles, user_hobbies_interests,
 // user_offer_saved, user_read_blog, user_shared_blog, 	user_shared_offer, user_view_offer, version
 
@@ -89,6 +96,17 @@ mongoose.set('useFindAndModify', false);
 mongoose.set('useCreateIndex', true);
 
 //********** files upload **************/
+var path = require('path');
+const fs = require('fs');
+const url = require('url');
+
+
+
+var dir = path.join(__dirname, 'uploads');
+
+//app.use("/uploads", express.static(path.join(__dirname, 'uploads')));
+
+
 const multer = require('multer');
 const blog_banner = require('./models/blog_banner');
 const user = require('./models/user');
@@ -820,7 +838,7 @@ app.post("/get_all_profile_data", async function (req, res) {
   let personal_description = "";
 
   
-  if(user_id != '') {
+  if(user_id) {
     
      await User.find({ _id: uid }).then((data) => {
 
@@ -915,13 +933,19 @@ app.post("/get_all_profile_data", async function (req, res) {
         personal_mission : personal_mission,
         personal_description : personal_description
         
-        
-
-      }
+       }
     });
     
   }
-
+  else {
+    res.send({
+      status: false,
+      ws: ws,
+      message: "Invalid request"
+  
+    });
+  }
+  
 });
 
 
@@ -932,16 +956,56 @@ app.post("/homepage_data", async function (req, res) {
   let version = req.body.version;
   let language = req.body.language;
   let ws = req.body.ws;
+  //var postdata = [];
+  var  up_id = '';
+  var udata = [];
+  var same_domain = [];
+  if(user_id) {
+    if(source && version) {
+      await Version.find({ _id: '6126216ffc198a178555d72f' }).then((vdata) => {
+        let android_v = vdata[0].version;
+        let ios_v = vdata[0].ios;
 
+        if(source == 'android') {
+          if (version > android_v) {
+					  let adddata = {"android" : version};
 
-  let data = [];
-  let up_id = '';
-  // validate token 
-  // check version 
-  let udata = [];
-  let same_domain = [];
-  if (user_id != '') {
-    // friend list//
+            var myquery = { _id: '6126216ffc198a178555d72f' };
+              var newvalues = { $set: {adddata} };
+              Version.updateOne(myquery, newvalues, function (err, res) {
+
+            });
+            
+          }
+
+        }
+        else if(source == 'ios') {
+          if (version > android_v) {
+					  let adddata = {"ios" : version};
+
+              var myquery = { _id: '6126216ffc198a178555d72f' };
+              var newvalues = { $set: {adddata} };
+              Version.updateOne(myquery, newvalues, function (err, res) {
+
+              });
+          }
+        }
+
+        let versiondata = {"source" : source,
+                           "version" : version
+
+                           };
+
+        var myquery = { _id: user_id };
+        var newvalues = { $set: {versiondata} };
+        User.updateOne(myquery, newvalues, function (err, res) {
+
+        });
+      });
+    }
+
+    // friend list code 
+
     await Friend_lists.find({ user_id: user_id }).then((ufriend) => {
 
       udata = ufriend;
@@ -949,39 +1013,36 @@ app.post("/homepage_data", async function (req, res) {
     });
 
     await User.find({ _id: user_id }).then((userdata) => {
-       
-      let up_id = userdata[0].university_school_id;
+      if(userdata.length > 0) {
+        let up_id = userdata[0].university_school_id;
 
-      User.find({ university_school_id: up_id }, { "_id": 1 }).then((domaindata) => {
-        same_domain = domaindata;
-        
-        // same domain user_id //
-        if (same_domain.length > 0) {
+        User.find({ university_school_id: up_id }, { "_id": 1 }).then((domaindata) => {
+          same_domain = domaindata;
+          // same domain user_id //
+          if (same_domain.length > 0) {
 
-          f_list = same_domain.toString();
+            f_list = same_domain.toString();
 
-        }
-        else {
-          f_list = [];
-        }
-
-      });
-
-    });
-    // get posts data 
-    await Posts.find({ _id: user_id }).then((userdata) => {
+          }
+          
+        });
+      }
+      else {
+        f_list = [];
+      }
 
     });
+   
+    const sort = { created_at: -1 }
 
-    //{"address.current":{$in:["Jupitor", "Mars"]}}
-
-    Posts.find({ user_id: user_id }, {
+    await Posts.find({ user_id: user_id }, {
       "_id": 1, "admin_id": 1, "user_id": 1, "university_post_id": 1, "caption": 1, "location_name": 1,
       "post_through_group": 1, "group_id": 1, "status": 1,
       "type": 1, "question": 1, "event_title": 1, "event_link": 1, "event_description": 1,
       "created_at": 1
-    }, { "user_id": { $in: f_list } }).then((postdata) => {
-      let userpost = postdata; // for user data 
+    }, { "user_id": { $in: f_list } }).sort(sort).lean().then((userpostdata) => {
+      
+       let userpost = userpostdata;  
       // $data = $this->custom_model->get_data_array("SELECT id,admin_id,user_id,university_post_id,caption,location_name,post_through_group,group_id,status,type,question,event_title,event_link,event_description,created_at FROM posts
       // WHERE  `user_id` IN ($f_list) AND `type` != '' OR (`admin_id` = '1' AND `university_post_id` = '$up_id' AND `type` != '' )  ORDER BY `id` DESC LIMIT $pagination,$limit ");
       // WHERE  `user_id` IN ($f_list) AND 
@@ -989,27 +1050,59 @@ app.post("/homepage_data", async function (req, res) {
       // `university_post_id` = '$up_id' AND 
       //`type` != '' )
       // Posts.find({$and: [  ["type !=", '' ], [ {"university_post_id": up_id} ] ]}, {"_id":1, "admin_id":1,"user_id": 1,"university_post_id":1,"caption":1,"location_name":1,"post_through_group":1,"group_id":1,"status":1,"type":1,"question":1,"event_title":1,"event_link":1,"event_description":1,"created_at":1  }).then((pdata) => {
-
-      //console.log(userpost);
-
+      
+      
       // });
+      
+      
       if(userpost.length > 0) {
+        for(var i = 0 ; i < userpost.length; i++ ) {
+
+          userpost[i]["groupId"] = {};
+          userpost[i]["event_register_count"] = 1;
+          userpost[i]["already_hit_button"] = 1;
+          userpost[i]["is_like"] = 1;
+          userpost[i]["post_like_count"] = 1;
+          userpost[i]["userUploadingPost"] = [{profile_image : "abc.png",
+                                                username     : "abc",
+                                                created_at   : "2021-08-14 09:50:18"
+                                              }];
+
+          userpost[i]["post_options"] = [ {
+                                            id: "hh",
+                                            options: "njcjnsj",
+                                            selected: "mcksdc",
+                                            selected_count:1,
+                                            post_id: "sdcnsjdn"
+                                          }
+                                        ];
+
+          userpost[i]["post_comments_count"] = [{
+                                                  id: "bscsd",
+                                                  attachment_type: "sdncjsad",
+                                                  attachment: "scdnjds",
+                                                  selected_count:1,
+                                                  thumbnail: {}
+                                              }];
+
+          
+        }
+
         res.send({
           status: true,
           ws: ws,
           message: "Successfully",
-          data: { post : userpost,
-                  f_list : f_list
-  
-                }
-  
+          data: userpost
+          
         });
 
       }
       else {
         res.send({
-          userpost : userpost
-  
+          status: true,
+          ws: ws,
+          message: "Successfully",
+          data: userpost
         });
 
       }
@@ -1029,16 +1122,18 @@ app.post("/homepage_data", async function (req, res) {
 
 
 
-app.post("/profile_imgs", async function (req, res) {
-  res.send({
-    status: true,
-    message: 'success',
-    ws: "profile_imgs",
-    data : "http://localhost:5000/../uploads/"
+app.use(express.static('uploads'));
+  app.get("/profile_imgs", async function (req, res) {
+    var baseUrl = `${req.protocol}://${req.headers.host}`+"/";
+    res.send({
+      status: true,
+      message: 'success',
+      ws: "profile_imgs",
+      data : baseUrl
+    });
+
+
   });
-
-
-});
 
 
 
@@ -3342,6 +3437,8 @@ app.post("/create_group", multer({ storage: storage }).single('group_image'), (r
   let status = req.body.status;
   let groupfile = req.file;
   let groupusers = req.body.groupusers;
+
+
   let today = new Date();
   let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
   let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
@@ -3375,59 +3472,270 @@ app.post("/create_group", multer({ storage: storage }).single('group_image'), (r
 });
 
 app.post("/report_post", (req, res) => {
-  console.log(req.body);
-  if (req.body.user_id) {
-    //here model name need to change
-    const groups = new Groups(req.body);
-    groups.save().then(() => {
-      res.send({
-        status: true,
-        message: "Thanks for letting us know , Your feedback is important in helping us keep the unilife community safe."
+  
+  let user_id = req.body.user_id;
+  let report_post_id = req.body.report_post_id;
+  let type = req.body.type;
+  let reason = req.body.reason;
+  let language = "en";
+  let ws = "report_post";
+
+  let today = new Date();
+  let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date + ' ' + time;
+
+  if(user_id && report_post_id) {
+      Posts.find({_id : report_post_id })
+        .then((postsdata) => {
+          
+        let uid = postsdata[0]._id;
+        if(user_id == uid) {
+          res.send({
+            status : false,
+            message : "You can not report by your self .",
+            ws : ws
+          });
+        }
+        else {
+
+          let userpost = {"user_id"       : user_id,
+                          "report_post_id" : report_post_id,
+                          "type"          : type,
+                          "reason"        : reason,
+                          "created_at"    : dateTime
+
+                        };
+          const report_user_post = new Report_user_post(userpost);
+          report_user_post.save().then(() => {
+            res.send({
+              status: true,
+              message: "Thanks for letting us know , Your feedback is important in helping us keep the unilife community safe.",
+              ws: ws
+            });
+          }).catch((e) => {
+            res.send({
+              status: false,
+              message: "Something went wrong!" + e,
+              ws: ws
+            });
+          })
+            
+
+        }
+        
+
+      })
+      .catch((e) => {
+        res.send({
+          status : false,
+          message : "error"+e,
+          ws : ws
+        });
       });
-    }).catch((e) => {
-      res.send({
-        status: false,
-        message: "Something went wrong!" + e
+    
+  }
+  else {
+    res.send({
+      status : false,
+      message: "user id and report post id is required.",
+      ws      : ws
+
       });
-    })
   }
 });
 
 app.post("/report_user", (req, res) => {
-  console.log(req.body);
-  if (req.body.user_id) {
-    //here model name need to change
-    const groups = new Groups(req.body);
-    groups.save().then(() => {
+
+  let report_user_id  = req.body.report_user_id;
+  let user_id         = req.body.user_id;
+  let type            = req.body.type;
+  let reason          = req.body.reason;
+  let language = "en";
+  let ws = "report_user";
+
+  let today = new Date();
+  let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date + ' ' + time;
+  
+  if (report_user_id) {
+
+    if(report_user_id != user_id) {
+      
+      Report_user_post.find({report_user_id : report_user_id , user_id : user_id })
+        .then((reportdata) => {
+          if (reportdata.length == 0) {
+
+            let reportArr = {"user_id" : user_id,
+                            "report_user_id" : report_user_id,
+                            "type"      : type,
+                            "reason"    : reason,
+                            "created_at" : dateTime
+
+                             };
+            const report_user_post = new Report_user_post(reportArr);
+              report_user_post.save().then(() => {
+                res.send({
+                  status: true,
+                  message: "Thanks for letting us know , Your feedback is important in helping us keep the unilife community safe.",
+                  ws: ws
+                });
+              }).catch((e) => {
+                res.send({
+                  status: false,
+                  message: "Something went wrong!" + e,
+                  ws: ws
+                });
+              })
+
+            
+          } else {
+            res.send({
+              status: false,
+              message: "You already reported this user so cant add again.",
+              ws: ws
+            });
+          }
+
+        })
+        .catch((e) => {
+          res.send({
+            status : false,
+            message : "error"+e,
+            ws : ws
+          });
+        });
+
+    }
+    else {
       res.send({
-        status: true,
-        message: "Thanks for letting us know , Your feedback is important in helping us keep the unilife community safe."
+        status : false,
+        message: "You can not report by your self.",
+        ws      : ws
+  
+        });
+      
+    }
+  }
+  else {
+    res.send({
+      status : false,
+      message: "report_user_id is required.",
+      ws      : ws
+
       });
-    }).catch((e) => {
-      res.send({
-        status: false,
-        message: "Something went wrong!" + e
-      });
-    })
   }
 });
 
 app.post("/create_poll", (req, res) => {
-  console.log(req.body);
-  if (req.body.user_id) {
+  
+  let user_id = req.body.user_id;
+  let group_id = req.body.group_id;
+  let question = req.body.question;
+  let options = req.body.options
+  let language = 'en';
+  let ws        = 'create_poll';
+  let post_through_group = "";
+  let university_school_id = "";
+
+
+  let today = new Date();
+  let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date + ' ' + time;
+
+
+  if (user_id) {
     //here model name need to change
-    const groups = new Groups(req.body);
-    groups.save().then(() => {
+    if(group_id) {
+
+      post_through_group = "yes";
+    }
+    else {
+      post_through_group = "no";
+    }
+
+    if(options) {
+      User.find({ _id: user_id })
+        .then((data) => {
+          university_school_id = data[0].university_school_id;
+
+          let postdata = {"group_id" : group_id,
+                          "post_through_group" : post_through_group,
+                          "user_id"    : user_id,
+                          "question"   : question,
+                          "university_post_id" : university_school_id,
+                          "type"          : "poll",
+                          "caption"    : "",
+                          "location_name"  : "",
+                          "status"          : "active",
+                          "event_title"     : "",
+                          "event_link"      : "",
+                          "event_description" : "",
+                          "created_at"      : dateTime,
+                          "updated_at"      : dateTime
+
+                          }
+
+          const posts = new Posts(postdata);
+          posts.save().then((pdata) => {
+            let id = pdata._id;
+            if(options.length > 0) {
+              for (let type of options) {  
+                 let optiondata = {"user_id" : user_id,
+                                    "options" : type,
+                                    "post_id" : id
+
+                                  }
+
+                    const posts_options = new Posts_options(optiondata);
+                    posts_options.save().then(() => {
+                      res.send({
+                        status: true,
+                        message: "Post added successfully"
+                      });
+
+                    }).catch((e) => {
+                      
+
+                    })
+                }
+
+            }
+            
+          }).catch((e) => {
+            res.send({
+              status: false,
+              message: "Something went wrong!" + e
+            });
+          })
+        }).catch((e) => {
+          res.send({
+            status: false,
+            message: "Something went wrong!" + e
+          });
+
+        });
+
+    }
+    else {
       res.send({
-        status: true,
-        message: "Post added successfully"
+        status   : false ,
+        ws       : ws ,
+        message  : 'Invalid resuest'
       });
-    }).catch((e) => {
-      res.send({
-        status: false,
-        message: "Something went wrong!" + e
-      });
-    })
+
+    }
+
+  }
+  else {
+    res.send({
+      status : false ,
+      ws      : ws ,
+      message : 'Invalid resuest'
+    });
+
   }
 });
 
@@ -3445,13 +3753,15 @@ app.post('/create_event', multer({ storage: storage }).single('image'), (req, re
 
   console.log(req.body);
   console.log(req.file);
+
+
   //Here need to insert into DB
   //here model name need to change
   const groups = new Groups(req.body);
   groups.save().then(() => {
     res.send({
       status: true,
-      message: "Post added successfully"
+      message: "Event created successfully"
     });
   }).catch((e) => {
     res.send({
@@ -3460,6 +3770,60 @@ app.post('/create_event', multer({ storage: storage }).single('image'), (req, re
     });
   })
 });
+
+
+app.post("/delete_post", (req, res) => {
+
+  res.send({
+    status: false,
+    message: "Something went wrong!"
+  });
+
+});
+
+app.post("/profile_update", (req, res) => {
+
+  res.send({
+    status: false,
+    message: "Something went wrong!"
+  });
+
+});
+
+//check_group_available_not
+//is_in_wish_list_parent
+//is_report_post
+//is_in_wish_list_child
+//is_in_wish_list_child_reply
+//event_link_counter_hit
+// select_poll_option
+// delete_post
+//create_opinion
+//upload_post_images
+// upload_image
+// get_post_comment
+//get_attachment_image
+//get_profile_path
+//get_blog_banner
+//get_brand_image
+//get_uploded_image
+//get_user_data
+//get_comment_likes
+// get_banner
+//get_social_media_post
+//remove_member_from_group
+//friend_req_listing
+//friend_req_accept_reject
+//send_emoji
+//university_schools_list
+//friend_request_send_listing
+//brand_detail
+//redeem_voucher
+//brand_data
+//categories_view_all_in_brand
+//categories_wise_offers_data
+
+
 
 
  //**************************Manoj APIs Ends******************************/
