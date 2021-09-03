@@ -960,6 +960,7 @@ app.post("/homepage_data", async function (req, res) {
   var  up_id = '';
   var udata = [];
   var same_domain = [];
+  var f_list = [];
   if(user_id) {
     if(source && version) {
       await Version.find({ _id: '6126216ffc198a178555d72f' }).then((vdata) => {
@@ -1013,6 +1014,7 @@ app.post("/homepage_data", async function (req, res) {
     });
 
     await User.find({ _id: user_id }).then((userdata) => {
+      
       if(userdata.length > 0) {
         let up_id = userdata[0].university_school_id;
 
@@ -1027,9 +1029,7 @@ app.post("/homepage_data", async function (req, res) {
           
         });
       }
-      else {
-        f_list = [];
-      }
+      
 
     });
    
@@ -1145,8 +1145,6 @@ app.post("/event_link_counter_hit", async function (req, res) {
   let ws = req.body.ws;
   let additional_data = [];
 
-  let count = 1;
-
   if (event_id != '' && user_id != '') {
     await Event_link_user_list.find({ event_id: event_id }, { "user_id": 1, "count": 1 }).then((old_users) => {
 
@@ -1154,16 +1152,21 @@ app.post("/event_link_counter_hit", async function (req, res) {
         count = old_users[0]['count'];
         u_id = old_users[0]['user_id'];
         // $myArray = explode(',', $u_id);
-        let new_count = count + 1;
-        // if (!in_array($user_id, $myArray)) 
-        // {
-        // 	$u_id = $old_users[0]['user_id'].','.$user_id;
-        // 	$additional_data['user_id'] = $u_id;
-        // }
+          let add_data = {};
+        
+          let new_count = count + 1;
+          if(!u_id.includes(user_id)) {
+            u_id = u_id+","+user_id;
+            add_data['user_id'] = u_id;
+          }
+          add_data["count"] = new_count;
 
-        // $additional_data['count'] 	= $new_count;
-        // $result = $this->custom_model->my_update($additional_data,array("event_id" => $event_id),"event_link_user_list");
+            var myquery = { _id: event_id };
+              var newvalues = { $set: {adddata} };
+              Event_link_user_list.updateOne(myquery, newvalues, function (err, res) {
 
+            });
+        
       }
       else {
         additional_data = {
@@ -1256,32 +1259,6 @@ app.get("/userexport", (req, res) => {
     });
 
 });
-
-//   User.find({})
-//     .then((data) => {
-//       let userdata = data; // for user data 
-//       if(userdata.length > 0) {
-
-//         res.send({
-//           status: true,
-//           message: "user export list",
-//           data: userdata,
-//         });
-//       } else {
-//         res.send({
-//           status: false,
-//           message: "data not found",
-//           data: [],
-//         });
-//       }
-
-//     })
-//     .catch((e) => {
-//       res.send(e);
-//     });
-
-
-// });
 
 app.get("/userlist", (req, res) => {
   User.find({})
@@ -1466,32 +1443,6 @@ app.post("/adduser", (req, res) => {
 
     });
   })
-
-
-
-  // check username 
-  // User.find()
-  //   .then((data) => {
-  //     let userdata = data;
-  //     if(userdata.length == 0) {
-
-
-
-
-  //     } else {
-  //       res.send({
-  //         status: false,
-  //         message: "username is exist",
-  //         data: [],
-  //       });
-  //     }
-
-  //   })
-  //   .catch((e) => {
-  //     res.send(e);
-  //   });
-
-
 
 });
 
@@ -3639,17 +3590,13 @@ app.post("/create_poll", (req, res) => {
   let post_through_group = "";
   let university_school_id = "";
 
-
   let today = new Date();
   let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
   let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
   let dateTime = date + ' ' + time;
 
-
-  if (user_id) {
-    //here model name need to change
-    if(group_id) {
-
+  if(user_id) {
+    if(group_id){
       post_through_group = "yes";
     }
     else {
@@ -3743,32 +3690,111 @@ app.post('/create_event', multer({ storage: storage }).single('image'), (req, re
   let event_title = req.body.event_title;
   let event_link = req.body.event_link;
   let event_description = req.body.event_description;
-  let event_images = req.file;
+  //let event_images = req.file;
+  let event_images = 0;
   let group_id = req.body.group_id;
   let user_id = req.body.user_id;
-  let post_through_group = req.body.post_through_group;
   let university_post_id = req.body.university_post_id;
-  let language = req.body.language; // en
+  let language = "en"; // en
   let ws = req.body.ws; // create_event
+  let post_through_group = "";
+  let university_school_id = "";
 
-  console.log(req.body);
-  console.log(req.file);
+  let today = new Date();
+  let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date + ' ' + time;
 
+  
+  if(user_id) {
+    if(group_id){
+      // check_group_available_not function params: user_id, group_id
+      post_through_group = "yes";
+    }
+    else {
+      post_through_group = "no";
+    }
+    User.find({ _id: user_id })
+        .then((data) => {
+          university_school_id = data[0].university_school_id;
 
-  //Here need to insert into DB
-  //here model name need to change
-  const groups = new Groups(req.body);
-  groups.save().then(() => {
+          let eventdata = {"group_id" : group_id,
+                          "post_through_group" : post_through_group,
+                          "user_id"    : user_id,
+                          "question"   : "",
+                          "university_post_id" : university_school_id,
+                          "type"          : "event",
+                          "caption"    : "",
+                          "location_name"  : "",
+                          "status"          : "active",
+                          "event_title"     : event_title,
+                          "event_link"      : event_link,
+                          "event_description" : event_description,
+                          "created_at"      : dateTime,
+                          "updated_at"      : dateTime
+
+                          }
+         
+          const posts = new Posts(eventdata);
+          posts.save().then((pdata) => {
+            let id = pdata._id;
+              if(event_images) {  
+                 let optiondata = {"attachment" : event_images.filename,
+                                    "attachment_type" : "image",
+                                    "post_id" : id
+
+                                  }
+                    // post_attachments
+                    const posts_attach = new Post_attachment(optiondata);
+                    posts_attach.save().then(() => {
+                      res.send({
+                        status: true,
+                        ws    : ws,
+                        message: "Event added successfully"
+                      });
+                     
+
+                    }).catch((e) => {
+                      res.send({
+                        status: false,
+                        ws    : ws,
+                        message: " event attachment failed to save"
+                      });
+                      
+
+                    })
+                }
+
+            res.send({
+              status: true,
+              ws    : ws,
+              message: "event added successfully"
+            });
+            
+          }).catch((e) => {
+            res.send({
+              status: false,
+              message: "Something went wrong!" + e
+            });
+          })
+        }).catch((e) => {
+          res.send({
+            status: false,
+            message: "Something went wrong!" + e
+          });
+
+        });
+   
+  }
+  else {
     res.send({
-      status: true,
-      message: "Event created successfully"
+      status : false ,
+      ws      : ws ,
+      message : 'Invalid resuest'
     });
-  }).catch((e) => {
-    res.send({
-      status: false,
-      message: "Something went wrong!" + e
-    });
-  })
+
+  }
+
 });
 
 
@@ -3790,12 +3816,16 @@ app.post("/profile_update", (req, res) => {
 
 });
 
+app.post("/categories_view_all_in_brand", (req, res) => {
+
+
+});
+
 //check_group_available_not
 //is_in_wish_list_parent
 //is_report_post
 //is_in_wish_list_child
 //is_in_wish_list_child_reply
-//event_link_counter_hit
 // select_poll_option
 // delete_post
 //create_opinion
@@ -3824,9 +3854,6 @@ app.post("/profile_update", (req, res) => {
 //categories_wise_offers_data
 
 
-
-
- //**************************Manoj APIs Ends******************************/
 
 
 
