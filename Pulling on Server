@@ -1,0 +1,87 @@
+Last login: Thu Sep  2 11:03:12 on ttys009
+(base) alwankazi@Alwans-MacBook-Pro ~ % cd desktop/ 
+(base) alwankazi@Alwans-MacBook-Pro desktop % cd Unilife
+(base) alwankazi@Alwans-MacBook-Pro Unilife % ssh -i unilife.pem ec2-user@15.206.103.14
+Last login: Thu Sep  2 11:58:20 2021 from bba167204.alshamil.net.ae
+
+       __|  __|_  )
+       _|  (     /   Amazon Linux 2 AMI
+      ___|\___|___|
+
+https://aws.amazon.com/amazon-linux-2/
+27 package(s) needed for security, out of 47 available
+Run "sudo yum update" to apply all updates.
+-bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory
+manpath: can't set the locale; make sure $LC_* and $LANG are correct
+[ec2-user@ip-172-31-44-153 ~]$ cd UnilifeNode
+[ec2-user@ip-172-31-44-153 UnilifeNode]$ fuser -n tcp -k 5000
+[ec2-user@ip-172-31-44-153 UnilifeNode]$ nodemon app.js
+[nodemon] 2.0.7
+[nodemon] to restart at any time, enter `rs`
+[nodemon] watching path(s): *.*
+[nodemon] watching extensions: js,mjs,json
+[nodemon] starting `node app.js`
+Listening on port 5000
+Connected to database!!!
+client_loop: send disconnect: Broken pipe
+(base) alwankazi@Alwans-MacBook-Pro Unilife % ssh -i unilife.pem ec2-user@15.206.103.14
+Last login: Thu Sep  2 18:17:25 2021 from 176.204.33.243
+
+       __|  __|_  )
+       _|  (     /   Amazon Linux 2 AMI
+      ___|\___|___|
+
+https://aws.amazon.com/amazon-linux-2/
+27 package(s) needed for security, out of 47 available
+Run "sudo yum update" to apply all updates.
+-bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory
+manpath: can't set the locale; make sure $LC_* and $LANG are correct
+[ec2-user@ip-172-31-44-153 ~]$ sudo rm -r UnilifeNode
+[ec2-user@ip-172-31-44-153 ~]$ git clone https://unilifetech@github.com/unilife-tech/UnilifeNode.git
+Cloning into 'UnilifeNode'...
+Password for 'https://unilifetech@github.com': 
+remote: Enumerating objects: 3068, done.
+remote: Counting objects: 100% (3068/3068), done.
+remote: Compressing objects: 100% (2208/2208), done.
+remote: Total 3068 (delta 768), reused 2996 (delta 696), pack-reused 0
+Receiving objects: 100% (3068/3068), 5.74 MiB | 5.68 MiB/s, done.
+Resolving deltas: 100% (768/768), done.
+[ec2-user@ip-172-31-44-153 ~]$ cd UnilifeNode
+[ec2-user@ip-172-31-44-153 UnilifeNode]$ fuser -n tcp -k 5000
+[ec2-user@ip-172-31-44-153 UnilifeNode]$ nodemon app.js
+[nodemon] 2.0.7
+[nodemon] to restart at any time, enter `rs`
+[nodemon] watching path(s): *.*
+[nodemon] watching extensions: js,mjs,json
+[nodemon] starting `node app.js`
+Listening on port 5000
+Connected to database!!!
+client_loop: send disconnect: Broken pipe
+(base) alwankazi@Alwans-MacBook-Pro Unilife % ssh -i unilife.pem ec2-user@15.206.103.14
+Last login: Fri Sep  3 09:11:57 2021 from 91.74.83.204
+
+       __|  __|_  )
+       _|  (     /   Amazon Linux 2 AMI
+      ___|\___|___|
+
+https://aws.amazon.com/amazon-linux-2/
+27 package(s) needed for security, out of 47 available
+Run "sudo yum update" to apply all updates.
+-bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory
+manpath: can't set the locale; make sure $LC_* and $LANG are correct
+npm notice 
+npm notice New minor version of npm available! 7.15.1 -> 7.22.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v7.22.0
+npm notice Run npm install -g npm@7.22.0 to update!
+npm notice 
+[ec2-user@ip-172-31-44-153 ~]$ fuser -n tcp -k 5000
+[ec2-user@ip-172-31-44-153 ~]$ cd UnilifeNode
+[ec2-user@ip-172-31-44-153 UnilifeNode]$ nodemon app.js
+[nodemon] 2.0.7
+[nodemon] to restart at any time, enter `rs`
+[nodemon] watching path(s): *.*
+[nodemon] watching extensions: js,mjs,json
+[nodemon] starting `node app.js`
+Listening on port 5000
+Connected to database!!!
+

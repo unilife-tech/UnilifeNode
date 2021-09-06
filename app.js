@@ -47,7 +47,7 @@ const Blog_likes = require('./models/blog_likes');
 // 26-07-21 modal 
 
 const Brand_banner = require('./models/brand_banner');
-const Contact_us = require('./models/contact_us');
+const Contact_us = require('./models/comments');
 const Discount_coupons = require('./models/discount_coupons');
 const Faqs = require('./models/faqs');
 const Feedback = require('./models/feedback');
@@ -58,6 +58,9 @@ const Posts_options  = require('./models/posts_options');
 
 const Report_user_post = require('./models/report_user_post');
 const Version = require('./models/version');
+const Comments = require('./models/comments');
+
+ const Comment_replies = require('./models/comment_replies');
 
 
 
@@ -863,7 +866,7 @@ app.post("/get_all_profile_data", async function (req, res) {
 
     })
     
-    if(university_school_id != "") {
+    if(university_school_id) {
       await University_schools.find({ _id: university_school_id }).then((unidata) => {
       
 
@@ -1061,10 +1064,12 @@ app.post("/homepage_data", async function (req, res) {
           userpost[i]["groupId"] = {};
           userpost[i]["event_register_count"] = 1;
           userpost[i]["already_hit_button"] = 1;
-          userpost[i]["is_like"] = 1;
+          userpost[i]["is_like"] = true;
           userpost[i]["post_like_count"] = 1;
-          userpost[i]["userUploadingPost"] = [{profile_image : "abc.png",
-                                                username     : "abc",
+          userpost[i]["post_like_count"] = 1;
+
+          userpost[i]["userUploadingPost"] = [{profile_image : "1628353733hrithik-roshan.jpg",
+                                                username     : "test",
                                                 created_at   : "2021-08-14 09:50:18"
                                               }];
 
@@ -1077,13 +1082,7 @@ app.post("/homepage_data", async function (req, res) {
                                           }
                                         ];
 
-          userpost[i]["post_comments_count"] = [{
-                                                  id: "bscsd",
-                                                  attachment_type: "sdncjsad",
-                                                  attachment: "scdnjds",
-                                                  selected_count:1,
-                                                  thumbnail: {}
-                                              }];
+         
 
           
         }
@@ -3820,6 +3819,140 @@ app.post("/categories_view_all_in_brand", (req, res) => {
 
 
 });
+
+
+app.post("/get_post_comment", async function (req , res)  {
+  let post_id     = req.body.post_id;
+  let language    = "en";
+  let ws          = req.body.ws;
+  let user_id     = req.body.user_id;
+  let userpostdata = [];
+  let comData     = [];
+	if(user_id) {
+    await Posts.find({ _id: post_id } ).lean().then((postdata) => {
+      userpostdata = postdata;
+    })
+
+    if(userpostdata.length > 0) {
+      await Comments.find({ post_id: post_id } ).lean().sort({_id: -1}).then((commentsData) => {
+        comData = commentsData;
+        
+      })
+      if(comData.length > 0) {
+        let comment_user_data = '1628353733hrithik-roshan.jpg';
+        let reply  = [];
+        for(let i = 0; i < comData.length ; i++ ) {
+
+            User.find({ _id: comData[i].user_id } ).lean().then((profiledata) => {
+    
+            if(profiledata.length > 0) {
+              comment_user_data =  profiledata[0].profile_image;
+            }
+            
+          })
+          // get_comment_likes($cvalue['id'])
+
+        comData[i]['user_data'] 	= comment_user_data;
+        comData[i]['like_users'] 	= '';
+        comData[i]['like_users_count'] 	= 0;
+
+        // is_in_wish_list_child($cvalue['user_id'],$comment_id)
+        comData[i]['is_like'] 	= false;
+
+        await Comment_replies.find({ comment_id: comData[i]._id } ).lean().sort({_id: -1}).then((replyData) => {
+          reply = replyData;
+
+          if(reply.length > 0) {
+            for (let index = 0; index < reply.length; index++) {
+              let reply_uid = $rvalue['user_id'];
+							let reply_cid = $rvalue['id'];
+
+                  reply[i]['is_like'] = false;
+                  reply[i]['user_data'] = ''
+                  reply[i]['like_users_reply'] = ''
+                  reply[i]['like_users_count_reply'] = 0;
+
+                // $is_in_wis_child = $this->is_in_wish_list_child_reply($reply_uid,$reply_cid);
+								// $reply[$rkey]['is_like'] = $is_in_wis_child;
+
+								// $reply_user_data = $this->get_user_data($reply_uid);
+								// $reply[$rkey]['user_data'] 	= $reply_user_data;
+
+								// $get_nlikes = $this->get_comment_likes($rvalue['comment_id']);
+								// $reply[$rkey]['like_users_reply'] 	= $get_nlikes;
+								// $reply[$rkey]['like_users_count_reply'] 	= count($get_nlikes);
+
+            }
+
+          }
+          comData[i]['reply_count'] = reply.length;
+					comData[i]['reply_comment'] = reply;
+          
+        })
+
+        }
+
+        res.send({
+          status: true,
+          ws     : "get_post_comment",
+          message: "Successfully",
+          data  : comData
+        });
+
+        
+          
+      }
+      else {
+        res.send({
+          status: true,
+          ws     : "get_post_comment",
+          message: "No comments available",
+          data  : ''
+        });
+
+      }
+      
+    }
+    else {
+       res.send({
+        status: false,
+        ws     : "get_post_comment",
+        message: "Invalid request"
+      });
+
+    }
+  
+  }
+  else {
+    res.send({
+      status: false,
+      ws     : "get_post_comment",
+      message: "Invalid request"
+    });
+  }
+
+});
+
+
+async function get_user_data(uid) {
+  let data = '';
+  if(uid) {
+    await   User.find({ _id: uid } ).lean().then((userdata) => {
+      
+        if(userdata.length > 0) {
+          return userdata[0].profile_image;
+        }
+        else {
+          return data;
+        }
+    })
+  }
+  else {
+    return data;
+  }
+}
+
+
 
 //check_group_available_not
 //is_in_wish_list_parent
