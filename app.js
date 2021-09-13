@@ -202,6 +202,7 @@ app.post("/add-university-school", (req, res) => {
   let noofstudent = req.body.noofstudent;
   let domain = req.body.domain;
   let status = req.body.status;
+  let lastId = ""; 
 
   //************  time stamp  **************************/
   let today = new Date();
@@ -220,10 +221,10 @@ app.post("/add-university-school", (req, res) => {
     "updated_at": dateTime
   };
   const university_schools = new University_schools(universityschoolData);
-  university_schools.save().then(() => {
-
+  university_schools.save().then((universityData) => {
+    lastId = universityData[0]._id;
   });
-  let lastId = 'de344b7544gvhh6hsadg';
+  //let lastId = 'de344b7544gvhh6hsadg';
 
   University_schools.find({ name: name }, function (err, data) {
     let schooldata = data;
@@ -815,9 +816,100 @@ app.post("/get-url", (req, res) => {
 //******* get profile url **************/
 
 
+app.post("/unilife_get_profile", async function (req, res)  {
+  let user_id = req.body.user_id;
+  let language = "en";
+  let ws      = req.body.ws;
+
+  let id = "";
+  let university_school_email = "";
+	let	username = "";
+	let	profile_image = "";
+	let	user_type = "";
+	let	university_school_id = "";
+	let	designation = "";
+	let	organisation = "";
+	let	personal_mission = "";
+	let	personal_description = "";
+	let	profile_banner_image = "";
+	let	unilife_user_name = "";
+	let	university_schools_name = "";
+	let	profile_logo = "";
+  let userdata = [];
+
+  if(user_id) {
+      await User.find({ _id: user_id }).then((data) => {
+      userdata = data;
+      id = data[0]._id;
+      university_school_email = data[0].university_school_email;
+      username = data[0].username;
+      profile_image = data[0].profile_image;
+      user_type = data[0].user_type;
+      university_school_id = data[0].university_school_id;
+      designation = data[0].designation;
+      personal_mission = data[0].personal_mission;
+      personal_description = data[0].personal_description;
+      profile_banner_image = data[0].profile_banner_image;
+      university_school_email = data[0].university_school_email;
+      unilife_user_name = data[0].username;
+      university_schools_name = data[0].university_school_email;
+      profile_logo = data[0].profile_image;
+
+    })
+    if(userdata.length > 0) {
+      res.send({
+        status: true,
+        ws: ws,
+        message: "User profile data",
+        self_intoduction : {
+                            id : id,
+                            university_school_email : university_school_email,
+                            username : username,
+                            profile_image : profile_image,
+                            user_type : user_type,
+                            university_school_id : university_school_id,
+                            designation : designation,
+                            organisation : organisation,
+                            personal_mission : personal_mission,
+                            personal_description : personal_description,
+                            profile_banner_image : university_school_email,
+                            unilife_user_name : unilife_user_name,
+                            university_schools_name : university_schools_name,
+                            profile_logo : profile_logo
+
+                           }
+    
+      });
+
+
+    }
+    else {
+      res.send({
+        status: false,
+        ws: ws,
+        message: "User data not found",
+        self_intoduction : userdata
+    
+      });
+      
+    }
+  }
+  else {
+    res.send({
+      status: false,
+      ws: ws,
+      message: "Invalid request"
+  
+    });
+    
+  }
+
+
+
+});
+
+
 //******  get_all_profile_data ************/
-
-
 app.post("/get_all_profile_data", async function (req, res) {
 
   let user_id = req.body.user_id;
@@ -1046,6 +1138,7 @@ app.post("/homepage_data", async function (req, res) {
     }, { "user_id": { $in: f_list } }).sort(sort).lean().then((userpostdata) => {
       
        let userpost = userpostdata;  
+       
       // $data = $this->custom_model->get_data_array("SELECT id,admin_id,user_id,university_post_id,caption,location_name,post_through_group,group_id,status,type,question,event_title,event_link,event_description,created_at FROM posts
       // WHERE  `user_id` IN ($f_list) AND `type` != '' OR (`admin_id` = '1' AND `university_post_id` = '$up_id' AND `type` != '' )  ORDER BY `id` DESC LIMIT $pagination,$limit ");
       // WHERE  `user_id` IN ($f_list) AND 
@@ -1060,30 +1153,38 @@ app.post("/homepage_data", async function (req, res) {
       
       if(userpost.length > 0) {
         for(var i = 0 ; i < userpost.length; i++ ) {
-
+          userpost[i]["id"] = userpost[i]._id ;
           userpost[i]["groupId"] = {};
           userpost[i]["event_register_count"] = 1;
           userpost[i]["already_hit_button"] = 1;
           userpost[i]["is_like"] = true;
           userpost[i]["post_like_count"] = 1;
-          userpost[i]["post_like_count"] = 1;
-
+          userpost[i]["post_comments_count"] = 1;
+         
           userpost[i]["userUploadingPost"] = [{profile_image : "1628353733hrithik-roshan.jpg",
                                                 username     : "test",
                                                 created_at   : "2021-08-14 09:50:18"
                                               }];
 
           userpost[i]["post_options"] = [ {
-                                            id: "hh",
+                                            id: "123456",
                                             options: "njcjnsj",
                                             selected: "mcksdc",
                                             selected_count:1,
                                             post_id: "sdcnsjdn"
                                           }
                                         ];
+          userpost[i]["post_attachments"] = [ {
+                                              id: "12",
+                                              attachment_type: "image",
+                                              attachment:  "abc.png",
+                                              selected_count: 1,
+                                              thumbnail: {
 
+                                                          }
+                                          }
+                                        ];
          
-
           
         }
 
@@ -3985,21 +4086,3 @@ async function get_user_data(uid) {
 //brand_data
 //categories_view_all_in_brand
 //categories_wise_offers_data
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
