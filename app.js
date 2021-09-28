@@ -3724,30 +3724,31 @@ app.post("/create_poll", (req, res) => {
                           "updated_at"      : dateTime
 
                           }
-
+            
           const posts = new Posts(postdata);
           posts.save().then((pdata) => {
             let id = pdata._id;
+            
             if(options.length > 0) {
-              for (let type of options) {  
+              for (let type of options) {
                  let optiondata = {"user_id" : user_id,
                                     "options" : type,
                                     "post_id" : id
 
                                   }
-
+                   
                     const posts_options = new Posts_options(optiondata);
                     posts_options.save().then(() => {
-                      res.send({
+                      
+
+                    }).catch((e) => {
+                    
+                    })
+              }
+              res.send({
                         status: true,
                         message: "Post added successfully"
                       });
-
-                    }).catch((e) => {
-                      
-
-                    })
-                }
 
             }
             
