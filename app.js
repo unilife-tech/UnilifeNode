@@ -59,8 +59,10 @@ const Posts_options  = require('./models/posts_options');
 const Report_user_post = require('./models/report_user_post');
 const Version = require('./models/version');
 const Comments = require('./models/comments');
+const Comment_replies = require('./models/comment_replies');
+const Post_options_select_by_user = require('./models/post_options_select_by_user');
 
- const Comment_replies = require('./models/comment_replies');
+
 
 
 
@@ -1153,37 +1155,105 @@ app.post("/homepage_data", async function (req, res) {
       
       if(userpost.length > 0) {
         for(var i = 0 ; i < userpost.length; i++ ) {
+          let user_id = userpost[i].user_id;
+          let post_id = userpost[i]._id;
           userpost[i]["id"] = userpost[i]._id ;
           userpost[i]["groupId"] = {};
-          userpost[i]["event_register_count"] = 1;
-          userpost[i]["already_hit_button"] = 1;
-          userpost[i]["is_like"] = true;
-          userpost[i]["post_like_count"] = 1;
-          userpost[i]["post_comments_count"] = 1;
-         
-          userpost[i]["userUploadingPost"] = [{profile_image : "1628353733hrithik-roshan.jpg",
-                                                username     : "test",
-                                                created_at   : "2021-08-14 09:50:18"
-                                              }];
+          // userpost[i]["event_register_count"] = 0;
+          // userpost[i]["already_hit_button"] = 0;
+          userpost[i]["is_like"] = false;
+          userpost[i]["post_like_count"] = 0;
+          userpost[i]["post_comments_count"] = 0;
+            let get_udata = [];
+              get_udata = get_user_data(user_id);
+   	 					if (get_udata.length > 0) 
+   	 					{
+   	 						userpost[i]['user_uploading_post'] = get_udata;
+   	 					}
+   	 					else
+   	 					{
+   	 					userpost[i]['user_uploading_post'] = get_udata;   	 						
+   	 					}
+          
+                // userpost[i]["userUploadingPost"] = [{profile_image : "1628353733hrithik-roshan.jpg",
+                //                                 username     : "test",
+                //                                 created_at   : "2021-08-14 09:50:18"
+                //                               }];
+                if(userpost[i].type == "poll") {
+                  let selected_opt = [];
+                    Posts_options.find({ post_id: post_id }).lean().then((selected_opt) => {
+                      selected_opt = selected_opt;
+                    if(selected_opt.length > 0) {
+                      for(var j = 0 ; j < selected_opt.length; j++ ) {
+                        let op_id = ovalue[j]._id;
+                          Post_options_select_by_user.find({ post_id: post_id, user_id : user_id, option_id : op_id }).lean().then((option) => {
+                            if(option.length > 0) {
+                              selected_opt[j]['selected'] = 'yes';
+                            }
+                            else {
+                              selected_opt[j]['selected'] = 'no';
+                            }
+                            
 
-          userpost[i]["post_options"] = [ {
-                                            id: "123456",
-                                            options: "njcjnsj",
-                                            selected: "mcksdc",
-                                            selected_count:1,
-                                            post_id: "sdcnsjdn"
-                                          }
-                                        ];
-          userpost[i]["post_attachments"] = [ {
-                                              id: "12",
-                                              attachment_type: "image",
-                                              attachment:  "abc.png",
-                                              selected_count: 1,
-                                              thumbnail: {
+                          });
 
-                                                          }
-                                          }
-                                        ];
+                           Post_options_select_by_user.find({ post_id: post_id, option_id : op_id }).lean().then((option_a) => {
+                            if(option_a.length > 0) {
+                              selected_opt[j]['selected_count'] = option_a.length;
+                            }
+                            else {
+                              selected_opt[j]['selected_count'] = 0;
+                            }
+
+                          });
+                          selected_opt[j]['post_id'] = post_id;
+
+
+                      }
+
+                    }
+                    // selected_opt
+                    
+                  });
+                  userpost[i]['post_options'] = selected_opt;
+                }
+                
+                if(userpost[i].type == "event") {
+                  let ava = 0;
+                  let reg_link_count = [];
+                   Event_link_user_list.find({ event_id: post_id }).lean().then((reg_link_count) => {
+                    reg_link_count = reg_link_count;
+                  });
+                  if(reg_link_count.length > 0) {
+                    // $HiddenProducts = explode(',',$reg_link_count[0]['user_id']);
+                    // if (in_array($user_id, $HiddenProducts)) 
+                    // {
+                    //   $ava = 'yes';
+                    // }
+                      //$data[$gkey]['event_register_count'] = $reg_link_count[0]['count'];
+                      userpost[i]['event_register_count'] = reg_link_count[0].count;
+                  }
+                  else {
+                    userpost[i]['event_register_count'] = 0;
+                  }
+                  userpost[i]['already_hit_button'] = ava;
+
+                }
+
+                let attachments = [];
+                
+                Post_attachment.find({ post_id: post_id }).lean().then((attachments) => {
+                  attachments = attachments;
+                });
+                if (attachments.lenth > 0) {
+                  for(var j = 0 ; j < attachments.length; j++ ) {
+                    let att = attachments[j]['attachment'];
+                    attachments[j]['attachment'] = get_attachment_image(att);
+
+                  }
+
+                }
+                userpost[i]["post_attachments"] = attachments;
          
           
         }
@@ -1220,7 +1290,13 @@ app.post("/homepage_data", async function (req, res) {
   }
 });
 
-
+ function get_attachment_image(image) {
+   if(image) {
+     let str = "http://ec2-15-206-103-14.ap-south-1.compute.amazonaws.com:5000/"+image;
+     return str;
+   }
+		
+   	}
 
 app.use(express.static('uploads'));
   app.get("/profile_imgs", async function (req, res) {
@@ -4038,6 +4114,7 @@ app.post("/get_post_comment", async function (req , res)  {
 
 async function get_user_data(uid) {
   let data = '';
+  
   if(uid) {
     await   User.find({ _id: uid } ).lean().then((userdata) => {
       
