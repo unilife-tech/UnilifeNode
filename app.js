@@ -1171,19 +1171,19 @@ app.post("/homepage_data", async function (req, res) {
             let get_udata = [];
               get_udata = get_user_data(user_id);
               
-   	 					if (get_udata.length > 0) 
-   	 					{
-   	 						userpost[i]['user_uploading_post'] = get_udata;
-   	 					}
-   	 					else
-   	 					{
-   	 					userpost[i]['user_uploading_post'] = get_udata;   	 						
-   	 					}
+   	 					// if (get_udata.length > 0) 
+   	 					// {
+   	 					// 	userpost[i]['user_uploading_post'] = get_udata;
+   	 					// }
+   	 					// else
+   	 					// {
+   	 					// userpost[i]['user_uploading_post'] = get_udata;   	 						
+   	 					// }
           
-                // userpost[i]["userUploadingPost"] = [{profile_image : "1628353733hrithik-roshan.jpg",
-                //                                 username     : "test",
-                //                                 created_at   : "2021-08-14 09:50:18"
-                //                               }];
+                userpost[i]["userUploadingPost"] = [{profile_image : "1628353733hrithik-roshan.jpg",
+                                                username     : "test",
+                                                created_at   : "2021-08-14 09:50:18"
+                                              }];
                 if(userpost[i].type == "poll") {
                   let selected_opt = [];
                   await Posts_options.find({ post_id: post_id }).lean().then((selected_option) => {
