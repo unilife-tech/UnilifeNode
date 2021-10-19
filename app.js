@@ -948,6 +948,8 @@ app.post("/get_all_profile_data", async function (req, res) {
         user_type = data[0].user_type;
         university_school_email = data[0].university_school_email,
         username = data[0].username,
+        profile_image = data[0].profile_image,
+        
        
         designation = data[0].designation,
         organisation = data[0].organisation,
@@ -1129,7 +1131,7 @@ app.post("/homepage_data", async function (req, res) {
       
 
     });
-   
+    let userpost = [];
     const sort = { created_at: -1 }
 
     await Posts.find({ user_id: user_id }, {
@@ -1139,7 +1141,7 @@ app.post("/homepage_data", async function (req, res) {
       "created_at": 1
     }, { "user_id": { $in: f_list } }).sort(sort).lean().then((userpostdata) => {
       
-       let userpost = userpostdata;  
+        userpost = userpostdata;  
        
       // $data = $this->custom_model->get_data_array("SELECT id,admin_id,user_id,university_post_id,caption,location_name,post_through_group,group_id,status,type,question,event_title,event_link,event_description,created_at FROM posts
       // WHERE  `user_id` IN ($f_list) AND `type` != '' OR (`admin_id` = '1' AND `university_post_id` = '$up_id' AND `type` != '' )  ORDER BY `id` DESC LIMIT $pagination,$limit ");
@@ -1151,7 +1153,9 @@ app.post("/homepage_data", async function (req, res) {
       
       
       // });
-      
+       
+
+      });
       
       if(userpost.length > 0) {
         for(var i = 0 ; i < userpost.length; i++ ) {
@@ -1166,6 +1170,7 @@ app.post("/homepage_data", async function (req, res) {
           userpost[i]["post_comments_count"] = 0;
             let get_udata = [];
               get_udata = get_user_data(user_id);
+              
    	 					if (get_udata.length > 0) 
    	 					{
    	 						userpost[i]['user_uploading_post'] = get_udata;
@@ -1181,12 +1186,18 @@ app.post("/homepage_data", async function (req, res) {
                 //                               }];
                 if(userpost[i].type == "poll") {
                   let selected_opt = [];
-                    Posts_options.find({ post_id: post_id }).lean().then((selected_opt) => {
-                      selected_opt = selected_opt;
+                  await Posts_options.find({ post_id: post_id }).lean().then((selected_option) => {
+                      selected_opt = selected_option;
+                        
+                  });
+                      
                     if(selected_opt.length > 0) {
                       for(var j = 0 ; j < selected_opt.length; j++ ) {
-                        let op_id = ovalue[j]._id;
-                          Post_options_select_by_user.find({ post_id: post_id, user_id : user_id, option_id : op_id }).lean().then((option) => {
+                        let option = [];
+                        let op_id = selected_opt[j]._id;
+                        await  Post_options_select_by_user.find({ post_id: post_id, user_id : user_id, option_id : op_id }).lean().then((option) => {
+                            option = option;
+                          });
                             if(option.length > 0) {
                               selected_opt[j]['selected'] = 'yes';
                             }
@@ -1194,18 +1205,16 @@ app.post("/homepage_data", async function (req, res) {
                               selected_opt[j]['selected'] = 'no';
                             }
                             
-
+                           let option_a = [];
+                          await Post_options_select_by_user.find({ post_id: post_id, option_id : op_id }).lean().then((option_aa) => {
+                            option_a = option_aa;
                           });
-
-                           Post_options_select_by_user.find({ post_id: post_id, option_id : op_id }).lean().then((option_a) => {
-                            if(option_a.length > 0) {
-                              selected_opt[j]['selected_count'] = option_a.length;
-                            }
-                            else {
-                              selected_opt[j]['selected_count'] = 0;
-                            }
-
-                          });
+                          if(option_a.length > 0) {
+                            selected_opt[j]['selected_count'] = option_a.length;
+                          }
+                          else {
+                            selected_opt[j]['selected_count'] = 0;
+                          }
                           selected_opt[j]['post_id'] = post_id;
 
 
@@ -1213,15 +1222,14 @@ app.post("/homepage_data", async function (req, res) {
 
                     }
                     // selected_opt
-                    
-                  });
+                  
                   userpost[i]['post_options'] = selected_opt;
                 }
                 
                 if(userpost[i].type == "event") {
                   let ava = 0;
                   let reg_link_count = [];
-                   Event_link_user_list.find({ event_id: post_id }).lean().then((reg_link_count) => {
+                 await  Event_link_user_list.find({ event_id: post_id }).lean().then((reg_link_count) => {
                     reg_link_count = reg_link_count;
                   });
                   if(reg_link_count.length > 0) {
@@ -1241,16 +1249,19 @@ app.post("/homepage_data", async function (req, res) {
                 }
 
                 let attachments = [];
-                
-                Post_attachment.find({ post_id: post_id }).lean().then((attachments) => {
-                  attachments = attachments;
+                await Post_attachment.find({ post_id: post_id }).lean().then((attach) => {
+                  attachments = attach;
                 });
                 if (attachments.lenth > 0) {
                   for(var j = 0 ; j < attachments.length; j++ ) {
                     let att = attachments[j]['attachment'];
-                    attachments[j]['attachment'] = get_attachment_image(att);
-
-                  }
+                    if(att) {
+                      attachments[j]['attachment'] = "http://ec2-15-206-103-14.ap-south-1.compute.amazonaws.com:5000/"+att;;
+                    }
+                    else {
+                      attachments[j]['attachment'] = '';
+                    }
+                   }
 
                 }
                 userpost[i]["post_attachments"] = attachments;
@@ -1276,9 +1287,7 @@ app.post("/homepage_data", async function (req, res) {
         });
 
       }
-      
-
-    });
+     //////
   }
   else {
     res.send({
@@ -1290,13 +1299,13 @@ app.post("/homepage_data", async function (req, res) {
   }
 });
 
- function get_attachment_image(image) {
-   if(image) {
-     let str = "http://ec2-15-206-103-14.ap-south-1.compute.amazonaws.com:5000/"+image;
-     return str;
-   }
+//  function get_attachment_image(image) {
+//    if(image) {
+//      let str = "http://ec2-15-206-103-14.ap-south-1.compute.amazonaws.com:5000/"+image;
+//      return str;
+//    }
 		
-   	}
+//    	}
 
 app.use(express.static('uploads'));
   app.get("/profile_imgs", async function (req, res) {
