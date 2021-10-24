@@ -60,6 +60,8 @@ const Report_user_post = require('./models/report_user_post');
 const Version = require('./models/version');
 const Comments = require('./models/comments');
 const Comment_replies = require('./models/comment_replies');
+const Post_comment_likes = require('./models/post_comment_likes');
+
 const Post_options_select_by_user = require('./models/post_options_select_by_user');
 
 
@@ -3817,13 +3819,14 @@ app.post("/create_poll", (req, res) => {
             let id = pdata._id;
             
             if(options.length > 0) {
-              for (let type of options) {
+               //for (let type of options) {
+                 for(let i = 0; i < options.length ; i++) {
                  let optiondata = {"user_id" : user_id,
-                                    "options" : type,
-                                    "post_id" : id
+                                    "options" : options[i]['option'],
+                                    "post_id" : id.toString()
 
                                   }
-                   
+                   console.log(optiondata);
                     const posts_options = new Posts_options(optiondata);
                     posts_options.save().then(() => {
                       
@@ -4272,6 +4275,72 @@ async function get_user_data(uid) {
     return data;
   }
 }
+
+
+app.post("/like_unlike_post", async function (req , res)  {
+  let post_id     = req.body.post_id;
+  let language    = "en";
+  let user_id     = req.body.user_id;
+  let ws          = "like_unlike_post";
+  let type        = "P";
+
+  let alldata = [];
+  let count   = 0;
+
+  //************  time stamp  **************************/
+  let today = new Date();
+  let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date + ' ' + time;
+
+  //************  time stamp  **************************/
+
+    await  Post_comment_likes.find({ post_comment_id: post_id, user_id : user_id } ).lean().then((lcdata) => {
+     
+      if(lcdata.length > 0) {
+        Post_comment_likes.deleteOne({ post_comment_id: post_id, user_id : user_id })
+          .then((data) => { 
+            
+          })
+        
+      }
+      else {
+        let post_comment = {"post_comment_id" : post_id,
+                      "user_id"         : user_id,
+                      "type"            : type,
+                      "created_at"      : dateTime,
+                      "updated_at"      : dateTime
+                      };
+       const post_l_c = new Post_comment_likes(post_comment);
+       post_l_c.save().then((data) => {
+         
+       })
+ 
+      }
+    })
+
+    
+    await  Post_comment_likes.find({ post_comment_id: post_id } ).lean().then((useralldata) => {
+      
+      console.log(useralldata);
+      alldata = useralldata;
+      count = useralldata.length;
+
+    })
+
+      console.log(alldata);
+     res.send({
+        response: true,
+        ws     : "like_unlike_post",
+        message: "success",
+        data    : {"count" : count,
+                   "rows" : []
+
+                  }
+      });
+    
+
+});
 
 
 
