@@ -3820,13 +3820,44 @@ app.post("/create_poll", (req, res) => {
             
             if(options.length > 0) {
                //for (let type of options) {
+                 let str = "";
                  for(let i = 0; i < options.length ; i++) {
+                   if(i == 0) {
+                      str = options[i]['option1'];
+                   }
+                   if(i == 1) {
+                    str = options[i]['option2'];
+                   }
+                  if(i == 2) {
+                    str = options[i]['option3'];
+                  }
+                  if(i == 3) {
+                    str = options[i]['option4'];
+                  }
+                  if(i == 4) {
+                    str = options[i]['option5'];
+                  }
+                  if(i == 5) {
+                    str = options[i]['option6'];
+                  }
+                  if(i == 6) {
+                    str = options[i]['option7'];
+                  }
+                  if(i == 7) {
+                    str = options[i]['option8'];
+                  }
+                  if(i == 8) {
+                    str = options[i]['option9'];
+                  }
+                  if(i == 9) {
+                    str = options[i]['option10'];
+                  }
                  let optiondata = {"user_id" : user_id,
-                                    "options" : options[i]['option'],
+                                    "options" : str,
                                     "post_id" : id.toString()
 
                                   }
-                   console.log(optiondata);
+                   
                     const posts_options = new Posts_options(optiondata);
                     posts_options.save().then(() => {
                       
