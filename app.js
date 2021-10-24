@@ -116,6 +116,7 @@ const multer = require('multer');
 const blog_banner = require('./models/blog_banner');
 const user = require('./models/user');
 const { response } = require('express');
+// const comments = require('./models/comments');
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, './uploads');
@@ -261,6 +262,7 @@ app.post("/add-university-school", (req, res) => {
     });
 
 });
+
 
 app.post("/delete-university-school", (req, res) => {
   let university_id = req.body.university_id;
@@ -4003,6 +4005,137 @@ app.post("/profile_update", (req, res) => {
 });
 
 app.post("/categories_view_all_in_brand", (req, res) => {
+
+
+});
+
+
+
+app.post("/add_comment", async function (req , res)  {
+  let user_id = req.body.user_id;
+  let post_id = req.body.post_id;
+  let comment = req.body.comment;
+  let ws = "add_comment";
+
+  let userpostdata = [];
+  let comData     = [];
+
+   //************  time stamp  **************************/
+   let today = new Date();
+   let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+   let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+   let dateTime = date + ' ' + time;
+ 
+   //************  time stamp  **************************/
+
+    let commentData = {"user_id"     : user_id,
+                      "post_id"     : post_id,
+                      "comment"     : comment,
+                      "created_at"  : dateTime,
+                      "updated_at"  : dateTime
+
+                      };
+
+        const comments = new Comments(commentData);
+        comments.save().then(() => {
+          
+            
+            
+                // res.send({
+                //     status: true,
+                //     message: "comment success",
+                //     ws      : ws,
+                //     data    : [ { _id  : "3456785434567875",
+                //                   comment : "vvgvg",
+                //                   created_by :  "",
+                //                   user_id   : "3456785434567875",
+                //                   user_data : [{profile_image : "1628353733hrithik-roshan.jpg",
+                //                                 username     : "test",
+                //                                 created_at   : "2021-08-14 09:50:18"
+                //                               } ],
+                //                   like_users : [],
+                //                   likeUsersCount :  0,
+                //                   is_like :  false,
+                //                   reply_count : 0,
+                //                   reply_comment : []
+                //                 }]
+                //     });
+  
+        })
+        // .catch((e) => {
+        //   res.send({
+        //     status: false,
+        //     message: "something went wrong " + e
+  
+        //   });
+        // });   
+
+        await Comments.find({ post_id: post_id } ).lean().sort({_id: -1}).then((commentsData) => {
+          comData = commentsData;
+          
+        })
+
+        if(comData.length > 0) {
+          let comment_user_data = '1628353733hrithik-roshan.jpg';
+          let reply  = [];
+          for(let i = 0; i < comData.length ; i++ ) {
+  
+              User.find({ _id: comData[i].user_id } ).lean().then((profiledata) => {
+      
+              if(profiledata.length > 0) {
+                comment_user_data =  profiledata[0].profile_image;
+              }
+              
+            })
+
+            comData[i]['user_data']  = [{profile_image : "1628353733hrithik-roshan.jpg",
+                                                username     : "test",
+                                                created_at   : "2021-08-14 09:50:18"
+                                              } ];
+                                  
+            comData[i]['like_users'] 	= [];                   
+          comData[i]['is_like'] 	= false;
+  
+          await Comment_replies.find({ comment_id: comData[i]._id } ).lean().sort({_id: -1}).then((replyData) => {
+            reply = replyData;
+  
+            if(reply.length > 0) {
+              for (let index = 0; index < reply.length; index++) {
+                let reply_uid = $rvalue['user_id'];
+                let reply_cid = $rvalue['id'];
+                 reply[i]['is_like'] = false;
+                   
+  
+                  
+              }
+  
+            }
+            comData[i]['reply_count'] = reply.length;
+            comData[i]['reply_comment'] = reply;
+            
+          })
+  
+          }
+  
+          res.send({
+            status: true,
+            ws     : "add_comment",
+            message: "Successfully",
+            data  : comData
+          });
+  
+          
+            
+        }
+        else {
+          res.send({
+            status: true,
+            ws     : "add_comment",
+            message: "No comments available",
+            data  : comData
+          });
+  
+        }
 
 
 });
