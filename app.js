@@ -3771,13 +3771,14 @@ app.post("/report_user", (req, res) => {
 app.post("/create_poll", (req, res) => {
   
   let user_id = req.body.user_id;
-  let group_id = req.body.group_id;
+  
   let question = req.body.question;
   let options = req.body.options
   let language = 'en';
   let ws        = 'create_poll';
   let post_through_group = "";
   let university_school_id = "";
+  let group_id = "";
 
   let today = new Date();
   let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
@@ -3818,46 +3819,49 @@ app.post("/create_poll", (req, res) => {
           posts.save().then((pdata) => {
             let id = pdata._id;
             
-            if(options.length > 0) {
-               //for (let type of options) {
+           let num =  Object.keys(options).length;
+         
+            if(num > 0) {
                  let str = "";
-                 for(let i = 0; i < options.length ; i++) {
+                 for(let i = 0; i < num ; i++) {
                    if(i == 0) {
-                      str = options[i]['option1'];
+                      str = options.option1;
                    }
                    if(i == 1) {
-                    str = options[i]['option2'];
+                    str = options.option2;
                    }
                   if(i == 2) {
-                    str = options[i]['option3'];
+                    str = options.option3;
                   }
                   if(i == 3) {
-                    str = options[i]['option4'];
+                    str = options.option4;
                   }
                   if(i == 4) {
-                    str = options[i]['option5'];
+                    str = options.option5;
                   }
                   if(i == 5) {
-                    str = options[i]['option6'];
+                    str = options.option6;
                   }
                   if(i == 6) {
-                    str = options[i]['option7'];
+                    str = options.option7;
                   }
                   if(i == 7) {
-                    str = options[i]['option8'];
+                    str = options.option8;
                   }
                   if(i == 8) {
-                    str = options[i]['option9'];
+                    str = options.option9;
                   }
                   if(i == 9) {
-                    str = options[i]['option10'];
+                    str = options.option10;
                   }
                  let optiondata = {"user_id" : user_id,
                                     "options" : str,
-                                    "post_id" : id.toString()
+                                    "post_id" : id.toString(),
+                                    "created_at"      : dateTime,
+                                    "updated_at"      : dateTime
 
                                   }
-                   
+                   console.log(optiondata);
                     const posts_options = new Posts_options(optiondata);
                     posts_options.save().then(() => {
                       
@@ -4123,7 +4127,7 @@ app.post("/add_comment", async function (req , res)  {
             })
 
             comData[i]['user_data']  = [{profile_image : "1628353733hrithik-roshan.jpg",
-                                                username     : "test",
+                                                username     : "sack",
                                                 created_at   : "2021-08-14 09:50:18"
                                               } ];
                                   
@@ -4193,14 +4197,19 @@ app.post("/get_post_comment", async function (req , res)  {
         
       })
       if(comData.length > 0) {
-        let comment_user_data = '1628353733hrithik-roshan.jpg';
+        let comment_user_data = [{profile_image : "1628353733hrithik-roshan.jpg",
+                                  username     : "test",
+                                  created_at   : "2021-08-14 09:50:18"
+                                }];
         let reply  = [];
         for(let i = 0; i < comData.length ; i++ ) {
 
             User.find({ _id: comData[i].user_id } ).lean().then((profiledata) => {
     
             if(profiledata.length > 0) {
-              comment_user_data =  profiledata[0].profile_image;
+              // comment_user_data =  profiledata[0].profile_image;
+              // comment_user_data =  profiledata[0].username;
+              // comment_user_data =  profiledata[0].created_at;
             }
             
           })
@@ -4271,7 +4280,7 @@ app.post("/get_post_comment", async function (req , res)  {
        res.send({
         status: false,
         ws     : "get_post_comment",
-        message: "Invalid request"
+        message: "Invalid post request"
       });
 
     }
@@ -4281,7 +4290,7 @@ app.post("/get_post_comment", async function (req , res)  {
     res.send({
       status: false,
       ws     : "get_post_comment",
-      message: "Invalid request"
+      message: "Invalid user id request"
     });
   }
 
@@ -4329,10 +4338,10 @@ app.post("/like_unlike_post", async function (req , res)  {
     await  Post_comment_likes.find({ post_comment_id: post_id, user_id : user_id } ).lean().then((lcdata) => {
      
       if(lcdata.length > 0) {
-        Post_comment_likes.deleteOne({ post_comment_id: post_id, user_id : user_id })
-          .then((data) => { 
+        // Post_comment_likes.deleteOne({ post_comment_id: post_id, user_id : user_id })
+        //   .then((data) => { 
             
-          })
+        //   })
         
       }
       else {
@@ -4350,8 +4359,9 @@ app.post("/like_unlike_post", async function (req , res)  {
       }
     })
 
-    
-    await  Post_comment_likes.find({ post_comment_id: post_id } ).lean().then((useralldata) => {
+    console.log(post_id);
+    // { post_comment_id: post_id }
+    await  Post_comment_likes.find({post_comment_id : post_id } ).lean().then((useralldata) => {
       
       console.log(useralldata);
       alldata = useralldata;
