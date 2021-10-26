@@ -4216,7 +4216,7 @@ app.post("/get_post_comment", async function (req , res)  {
           // get_comment_likes($cvalue['id'])
 
         comData[i]['user_data'] 	= comment_user_data;
-        comData[i]['like_users'] 	= '';
+        comData[i]['like_users'] 	= [];
         comData[i]['like_users_count'] 	= 0;
 
         // is_in_wish_list_child($cvalue['user_id'],$comment_id)
