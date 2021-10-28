@@ -1169,7 +1169,18 @@ app.post("/homepage_data", async function (req, res) {
           userpost[i]["groupId"] = {};
           // userpost[i]["event_register_count"] = 0;
           // userpost[i]["already_hit_button"] = 0;
-          userpost[i]["is_like"] = false;
+          
+          await Post_comment_likes.find({post_comment_id : userpost[i]._id})
+            .then((likedata) => {
+              if(likedata.length > 0) {
+                userpost[i]["is_like"]  = 1;
+              }
+              else {
+                userpost[i]["is_like"]  = 0;
+              }
+
+            });
+
           userpost[i]["post_like_count"] = 0;
           userpost[i]["post_comments_count"] = 0;
             let get_udata = [];
@@ -1302,6 +1313,8 @@ app.post("/homepage_data", async function (req, res) {
     });
   }
 });
+
+
 
 //  function get_attachment_image(image) {
 //    if(image) {
@@ -4325,7 +4338,7 @@ app.post("/like_unlike_post", async function (req , res)  {
   let type        = "P";
 
   let alldata = [];
-  let count   = 0;
+  let count   = 1;
 
   //************  time stamp  **************************/
   let today = new Date();
@@ -4359,17 +4372,15 @@ app.post("/like_unlike_post", async function (req , res)  {
       }
     })
 
-    console.log(post_id);
-    // { post_comment_id: post_id }
+    
     await  Post_comment_likes.find({post_comment_id : post_id } ).lean().then((useralldata) => {
       
-      console.log(useralldata);
+      
       alldata = useralldata;
       count = useralldata.length;
 
     })
 
-      console.log(alldata);
      res.send({
         response: true,
         ws     : "like_unlike_post",
