@@ -1173,10 +1173,10 @@ app.post("/homepage_data", async function (req, res) {
           await Post_comment_likes.find({post_comment_id : userpost[i]._id})
             .then((likedata) => {
               if(likedata.length > 0) {
-                userpost[i]["is_like"]  = 1;
+                userpost[i]["is_like"]  = true;
               }
               else {
-                userpost[i]["is_like"]  = 0;
+                userpost[i]["is_like"]  = false;
               }
 
             });
