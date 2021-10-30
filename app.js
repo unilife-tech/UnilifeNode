@@ -1170,7 +1170,7 @@ app.post("/homepage_data", async function (req, res) {
           // userpost[i]["event_register_count"] = 0;
           // userpost[i]["already_hit_button"] = 0;
           
-          await Post_comment_likes.find({post_comment_id : userpost[i]._id})
+          await Post_comment_likes.find({post_comment_id : userpost[i]._id, user_id: user_id})
             .then((likedata) => {
               if(likedata.length > 0) {
                 userpost[i]["is_like"]  = true;
@@ -4351,10 +4351,10 @@ app.post("/like_unlike_post", async function (req , res)  {
     await  Post_comment_likes.find({ post_comment_id: post_id, user_id : user_id } ).lean().then((lcdata) => {
      
       if(lcdata.length > 0) {
-        // Post_comment_likes.deleteOne({ post_comment_id: post_id, user_id : user_id })
-        //   .then((data) => { 
+        Post_comment_likes.deleteOne({ post_comment_id: post_id, user_id : user_id })
+          .then((data) => { 
             
-        //   })
+          })
         
       }
       else {
