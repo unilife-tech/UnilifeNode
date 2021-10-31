@@ -22,7 +22,7 @@ const Highlight = require('./models/highlights');
 const University_schools = require('./models/university_schools');
 const Otp = require('./models/otp');
 const Domain = require('./models/domain');
-
+require("dotenv").config();
 const Admin_users = require('./models/admin_users');
 const Delete_users = require('./models/delete_users');
 
@@ -54,7 +54,7 @@ const Feedback = require('./models/feedback');
 const Terms = require('./models/term&conditions');
 const Redeem_user = require('./models/brands_redeem_user');
 const User_social_profile = require('./models/user_social_profile');
-const Posts_options  = require('./models/posts_options');
+const Posts_options = require('./models/posts_options');
 
 const Report_user_post = require('./models/report_user_post');
 const Version = require('./models/version');
@@ -63,9 +63,9 @@ const Comment_replies = require('./models/comment_replies');
 const Post_comment_likes = require('./models/post_comment_likes');
 
 const Post_options_select_by_user = require('./models/post_options_select_by_user');
-
-
-
+const bcrypt = require('bcryptjs');
+const jwt = require("jsonwebtoken");
+const auth = require("./middleware/auth");
 
 
 // const university              = require('./models/university');
@@ -194,20 +194,20 @@ app.get('/university-list', (req, res) => {
     .catch((e) => {
       res.send({
         status: false,
-        message: "error"+e,
+        message: "error" + e,
         data: []
       });
     });
 
 });
 
-app.post("/add-university-school", (req, res) => {
+app.post("/add-university-school", auth, (req, res) => {
   let name = req.body.university;
   let deanname = req.body.deanname;
   let noofstudent = req.body.noofstudent;
   let domain = req.body.domain;
   let status = req.body.status;
-  let lastId = ""; 
+  let lastId = "";
 
   //************  time stamp  **************************/
   let today = new Date();
@@ -266,7 +266,7 @@ app.post("/add-university-school", (req, res) => {
 });
 
 
-app.post("/delete-university-school", (req, res) => {
+app.post("/delete-university-school", auth, (req, res) => {
   let university_id = req.body.university_id;
   University_schools.remove({ _id: university_id })
     .then(() => {
@@ -313,7 +313,7 @@ app.get('/degree-list', (req, res) => {
     .catch((e) => {
       res.send({
         status: false,
-        message: "error"+e,
+        message: "error" + e,
         data: []
       });
     });
@@ -344,7 +344,7 @@ app.get('/year-list', (req, res) => {
     .catch((e) => {
       res.send({
         status: false,
-        message: "error"+e,
+        message: "error" + e,
         data: []
       });
     });
@@ -375,7 +375,7 @@ app.get('/programme-list', (req, res) => {
     .catch((e) => {
       res.send({
         status: false,
-        message: "error"+e,
+        message: "error" + e,
         data: []
       });
     });
@@ -406,7 +406,7 @@ app.get('/country-list', (req, res) => {
     .catch((e) => {
       res.send({
         status: false,
-        message: "error"+e,
+        message: "error" + e,
         data: []
       });
     });
@@ -514,7 +514,7 @@ app.post('/signup-user', (req, res) => {
 
       res.send({
         status: false,
-        message: "error"+e,
+        message: "error" + e,
         data: []
       });
     })
@@ -523,7 +523,7 @@ app.post('/signup-user', (req, res) => {
     // res.send({ status : false, message: 'user has faied to signup ', data: []});
     res.send({
       status: false,
-      message: "error"+e,
+      message: "error" + e,
       data: []
     });
   })
@@ -562,11 +562,18 @@ app.post('/signup-user', (req, res) => {
 
 app.post('/login', (req, res) => {
   User.find({ email: req.body.username, password: req.body.password }, function (err, user) {
-
+    const token = jwt.sign(
+      { user_id: req.body.username },
+      process.env.TOKEN_KEY,
+      {
+        expiresIn: "2h",
+      }
+    );
     if (err == null) return res.send({
       response: true,
       message: "login successfuly",
       data: user,
+      token: token
     });
     res.send({
       status: false,
@@ -577,8 +584,7 @@ app.post('/login', (req, res) => {
 
 });
 
-app.post('/user-device', (req, res) => {
-
+app.post('/user-device', auth, (req, res) => {
   let user_id = req.body.user_id;
   let device_token = req.body.device_token;
   let device_id = req.body.device_id;
@@ -614,7 +620,7 @@ app.post('/user-device', (req, res) => {
 
 
 
-app.post('/useremailverify', (req, res) => {
+app.post('/useremailverify', auth, (req, res) => {
   let usermail = req.body.email;
   User.find({ university_school_email: usermail })
     .then((data) => {
@@ -637,15 +643,15 @@ app.post('/useremailverify', (req, res) => {
     .catch((e) => {
       res.send({
         status: false,
-        message: "error"+e
-        
+        message: "error" + e
+
       });
     });
 
 
 });
 
-app.post('/emailverification', (req, res) => {
+app.post('/emailverification', auth, (req, res) => {
 
   let usermail = req.body.email;
   let otpnum = (Math.floor(Math.random() * 10000) + 10000).toString().substring(1);
@@ -724,7 +730,7 @@ app.post("/otp_verify", (req, res) => {
 
       res.send({
         status: false,
-        message: "error"+e,
+        message: "error" + e,
         data: {}
       });
     });
@@ -732,7 +738,7 @@ app.post("/otp_verify", (req, res) => {
 
 
 //**** Domain Verification *******//
-app.post("/get_uni_id_using_domain", (req, res) => {
+app.post("/get_uni_id_using_domain", auth, (req, res) => {
   let domain = req.body.domain;
 
 
@@ -758,7 +764,7 @@ app.post("/get_uni_id_using_domain", (req, res) => {
     .catch((e) => {
       res.send({
         status: false,
-        message: "error"+e,
+        message: "error" + e,
         data: []
       });
     });
@@ -769,7 +775,7 @@ app.post("/get_uni_id_using_domain", (req, res) => {
 
 
 //******* get profile url **************/
-app.post("/get-url", (req, res) => {
+app.post("/get-url", auth, (req, res) => {
   let user_id = req.body.user_id;
   let useremail = req.body.email;
 
@@ -811,8 +817,8 @@ app.post("/get-url", (req, res) => {
     .catch((e) => {
       res.send({
         status: false,
-        message: "error"+e
-        
+        message: "error" + e
+
       });
     });
 });
@@ -822,29 +828,29 @@ app.post("/get-url", (req, res) => {
 //******* get profile url **************/
 
 
-app.post("/unilife_get_profile", async function (req, res)  {
+app.post("/unilife_get_profile", auth, async function (req, res) {
   let user_id = req.body.user_id;
   let language = "en";
-  let ws      = req.body.ws;
+  let ws = req.body.ws;
 
   let id = "";
   let university_school_email = "";
-	let	username = "";
-	let	profile_image = "";
-	let	user_type = "";
-	let	university_school_id = "";
-	let	designation = "";
-	let	organisation = "";
-	let	personal_mission = "";
-	let	personal_description = "";
-	let	profile_banner_image = "";
-	let	unilife_user_name = "";
-	let	university_schools_name = "";
-	let	profile_logo = "";
+  let username = "";
+  let profile_image = "";
+  let user_type = "";
+  let university_school_id = "";
+  let designation = "";
+  let organisation = "";
+  let personal_mission = "";
+  let personal_description = "";
+  let profile_banner_image = "";
+  let unilife_user_name = "";
+  let university_schools_name = "";
+  let profile_logo = "";
   let userdata = [];
 
-  if(user_id) {
-      await User.find({ _id: user_id }).then((data) => {
+  if (user_id) {
+    await User.find({ _id: user_id }).then((data) => {
       userdata = data;
       id = data[0]._id;
       university_school_email = data[0].university_school_email;
@@ -862,29 +868,29 @@ app.post("/unilife_get_profile", async function (req, res)  {
       profile_logo = data[0].profile_image;
 
     })
-    if(userdata.length > 0) {
+    if (userdata.length > 0) {
       res.send({
         status: true,
         ws: ws,
         message: "User profile data",
-        self_intoduction : {
-                            id : id,
-                            university_school_email : university_school_email,
-                            username : username,
-                            profile_image : profile_image,
-                            user_type : user_type,
-                            university_school_id : university_school_id,
-                            designation : designation,
-                            organisation : organisation,
-                            personal_mission : personal_mission,
-                            personal_description : personal_description,
-                            profile_banner_image : university_school_email,
-                            unilife_user_name : unilife_user_name,
-                            university_schools_name : university_schools_name,
-                            profile_logo : profile_logo
+        self_intoduction: {
+          id: id,
+          university_school_email: university_school_email,
+          username: username,
+          profile_image: profile_image,
+          user_type: user_type,
+          university_school_id: university_school_id,
+          designation: designation,
+          organisation: organisation,
+          personal_mission: personal_mission,
+          personal_description: personal_description,
+          profile_banner_image: university_school_email,
+          unilife_user_name: unilife_user_name,
+          university_schools_name: university_schools_name,
+          profile_logo: profile_logo
 
-                           }
-    
+        }
+
       });
 
 
@@ -894,10 +900,10 @@ app.post("/unilife_get_profile", async function (req, res)  {
         status: false,
         ws: ws,
         message: "User data not found",
-        self_intoduction : userdata
-    
+        self_intoduction: userdata
+
       });
-      
+
     }
   }
   else {
@@ -905,9 +911,9 @@ app.post("/unilife_get_profile", async function (req, res)  {
       status: false,
       ws: ws,
       message: "Invalid request"
-  
+
     });
-    
+
   }
 
 
@@ -916,7 +922,7 @@ app.post("/unilife_get_profile", async function (req, res)  {
 
 
 //******  get_all_profile_data ************/
-app.post("/get_all_profile_data", async function (req, res) {
+app.post("/get_all_profile_data", auth, async function (req, res) {
 
   let user_id = req.body.user_id;
   var obj = [];
@@ -932,18 +938,18 @@ app.post("/get_all_profile_data", async function (req, res) {
   let profile_image = "";
   let university_school_email = "";
   let username = "";
-  
+
   let designation = "";
   let organisation = "";
   let personal_mission = "";
   let personal_description = "";
 
-  
-  if(user_id) {
-    
-     await User.find({ _id: uid }).then((data) => {
 
-      if(data.length > 0) {
+  if (user_id) {
+
+    await User.find({ _id: uid }).then((data) => {
+
+      if (data.length > 0) {
         university_school_id = data[0].university_school_id;
 
         unilife_user_name = data[0].username;
@@ -951,30 +957,30 @@ app.post("/get_all_profile_data", async function (req, res) {
         university_schools_name = data[0].profile_banner_image;
         user_type = data[0].user_type;
         university_school_email = data[0].university_school_email,
-        username = data[0].username,
-        profile_image = data[0].profile_image,
-        
-       
-        designation = data[0].designation,
-        organisation = data[0].organisation,
-        personal_mission = data[0].personal_mission,
-        personal_description = data[0].personal_description
+          username = data[0].username,
+          profile_image = data[0].profile_image,
+
+
+          designation = data[0].designation,
+          organisation = data[0].organisation,
+          personal_mission = data[0].personal_mission,
+          personal_description = data[0].personal_description
 
       }
-     
+
 
 
     })
-    
-    if(university_school_id) {
+
+    if (university_school_id) {
       await University_schools.find({ _id: university_school_id }).then((unidata) => {
-      
+
 
       });
 
     }
-  
-    
+
+
 
     await Highlight.find({ user_id: user_id }).then((uhigh) => {
       response['user_highlights'] = uhigh;
@@ -1028,31 +1034,31 @@ app.post("/get_all_profile_data", async function (req, res) {
         user_type: user_type,
         profile_logo: profile_logo,
         profile_image: profile_image,
-        university_school_email : university_school_email,
-        username : username,
-        university_school_id : university_school_id,
-        designation : designation,
-        organisation : organisation,
-        personal_mission : personal_mission,
-        personal_description : personal_description
-        
-       }
+        university_school_email: university_school_email,
+        username: username,
+        university_school_id: university_school_id,
+        designation: designation,
+        organisation: organisation,
+        personal_mission: personal_mission,
+        personal_description: personal_description
+
+      }
     });
-    
+
   }
   else {
     res.send({
       status: false,
       ws: ws,
       message: "Invalid request"
-  
+
     });
   }
-  
+
 });
 
 
-app.post("/homepage_data", async function (req, res) {
+app.post("/homepage_data", auth, async function (req, res) {
 
   let user_id = req.body.user_id;
   let source = req.body.source;
@@ -1060,48 +1066,49 @@ app.post("/homepage_data", async function (req, res) {
   let language = req.body.language;
   let ws = req.body.ws;
   //var postdata = [];
-  var  up_id = '';
+  var up_id = '';
   var udata = [];
   var same_domain = [];
   var f_list = [];
-  if(user_id) {
-    if(source && version) {
+  if (user_id) {
+    if (source && version) {
       await Version.find({ _id: '6126216ffc198a178555d72f' }).then((vdata) => {
         let android_v = vdata[0].version;
         let ios_v = vdata[0].ios;
 
-        if(source == 'android') {
+        if (source == 'android') {
           if (version > android_v) {
-					  let adddata = {"android" : version};
+            let adddata = { "android": version };
 
             var myquery = { _id: '6126216ffc198a178555d72f' };
-              var newvalues = { $set: {adddata} };
-              Version.updateOne(myquery, newvalues, function (err, res) {
+            var newvalues = { $set: { adddata } };
+            Version.updateOne(myquery, newvalues, function (err, res) {
 
             });
-            
+
           }
 
         }
-        else if(source == 'ios') {
+        else if (source == 'ios') {
           if (version > android_v) {
-					  let adddata = {"ios" : version};
+            let adddata = { "ios": version };
 
-              var myquery = { _id: '6126216ffc198a178555d72f' };
-              var newvalues = { $set: {adddata} };
-              Version.updateOne(myquery, newvalues, function (err, res) {
+            var myquery = { _id: '6126216ffc198a178555d72f' };
+            var newvalues = { $set: { adddata } };
+            Version.updateOne(myquery, newvalues, function (err, res) {
 
-              });
+            });
           }
         }
 
-        let versiondata = {"source" : source,
-                           "version" : version
+        let versiondata = {
+          "source": source,
+          "version": version
 
-                           };
+        };
 
         var myquery = { _id: user_id };
-        var newvalues = { $set: {versiondata} };
+        var newvalues = { $set: { versiondata } };
         User.updateOne(myquery, newvalues, function (err, res) {
 
         });
@@ -1117,8 +1124,8 @@ app.post("/homepage_data", async function (req, res) {
     });
 
     await User.find({ _id: user_id }).then((userdata) => {
-      
-      if(userdata.length > 0) {
+
+      if (userdata.length > 0) {
         let up_id = userdata[0].university_school_id;
 
         User.find({ university_school_id: up_id }, { "_id": 1 }).then((domaindata) => {
@@ -1129,10 +1136,10 @@ app.post("/homepage_data", async function (req, res) {
             f_list = same_domain.toString();
 
           }
-          
+
         });
       }
-      
+
 
     });
     let userpost = [];
@@ -1144,9 +1151,9 @@ app.post("/homepage_data", async function (req, res) {
       "type": 1, "question": 1, "event_title": 1, "event_link": 1, "event_description": 1,
       "created_at": 1
     }, { "user_id": { $in: f_list } }).sort(sort).lean().then((userpostdata) => {
-      
-        userpost = userpostdata;  
-       
+
+      userpost = userpostdata;
+
       // $data = $this->custom_model->get_data_array("SELECT id,admin_id,user_id,university_post_id,caption,location_name,post_through_group,group_id,status,type,question,event_title,event_link,event_description,created_at FROM posts
       // WHERE  `user_id` IN ($f_list) AND `type` != '' OR (`admin_id` = '1' AND `university_post_id` = '$up_id' AND `type` != '' )  ORDER BY `id` DESC LIMIT $pagination,$limit ");
       // WHERE  `user_id` IN ($f_list) AND 
@@ -1154,155 +1161,156 @@ app.post("/homepage_data", async function (req, res) {
       // `university_post_id` = '$up_id' AND 
       //`type` != '' )
       // Posts.find({$and: [  ["type !=", '' ], [ {"university_post_id": up_id} ] ]}, {"_id":1, "admin_id":1,"user_id": 1,"university_post_id":1,"caption":1,"location_name":1,"post_through_group":1,"group_id":1,"status":1,"type":1,"question":1,"event_title":1,"event_link":1,"event_description":1,"created_at":1  }).then((pdata) => {
-      
-      
-      // });
-       
 
-      });
-      
-      if(userpost.length > 0) {
-        for(var i = 0 ; i < userpost.length; i++ ) {
-          let user_id = userpost[i].user_id;
-          let post_id = userpost[i]._id;
-          userpost[i]["id"] = userpost[i]._id ;
-          userpost[i]["groupId"] = {};
-          // userpost[i]["event_register_count"] = 0;
-          // userpost[i]["already_hit_button"] = 0;
-          
-          await Post_comment_likes.find({post_comment_id : userpost[i]._id, user_id: user_id})
-            .then((likedata) => {
-              if(likedata.length > 0) {
-                userpost[i]["is_like"]  = true;
+
+      // });
+
+
+    });
+
+    if (userpost.length > 0) {
+      for (var i = 0; i < userpost.length; i++) {
+        let user_id = userpost[i].user_id;
+        let post_id = userpost[i]._id;
+        userpost[i]["id"] = userpost[i]._id;
+        userpost[i]["groupId"] = {};
+        // userpost[i]["event_register_count"] = 0;
+        // userpost[i]["already_hit_button"] = 0;
+
+        await Post_comment_likes.find({ post_comment_id: userpost[i]._id, user_id: user_id })
+          .then((likedata) => {
+            if (likedata.length > 0) {
+              userpost[i]["is_like"] = true;
+            }
+            else {
+              userpost[i]["is_like"] = false;
+            }
+
+          });
+
+        userpost[i]["post_like_count"] = 0;
+        userpost[i]["post_comments_count"] = 0;
+        let get_udata = [];
+        get_udata = get_user_data(user_id);
+
+        // if (get_udata.length > 0) 
+        // {
+        // 	userpost[i]['user_uploading_post'] = get_udata;
+        // }
+        // else
+        // {
+        // userpost[i]['user_uploading_post'] = get_udata;   	 						
+        // }
+
+        userpost[i]["userUploadingPost"] = [{
+          profile_image: "1628353733hrithik-roshan.jpg",
+          username: "test",
+          created_at: "2021-08-14 09:50:18"
+        }];
+        if (userpost[i].type == "poll") {
+          let selected_opt = [];
+          await Posts_options.find({ post_id: post_id }).lean().then((selected_option) => {
+            selected_opt = selected_option;
+
+          });
+
+          if (selected_opt.length > 0) {
+            for (var j = 0; j < selected_opt.length; j++) {
+              let option = [];
+              let op_id = selected_opt[j]._id;
+              await Post_options_select_by_user.find({ post_id: post_id, user_id: user_id, option_id: op_id }).lean().then((option) => {
+                option = option;
+              });
+              if (option.length > 0) {
+                selected_opt[j]['selected'] = 'yes';
               }
               else {
-                userpost[i]["is_like"]  = false;
+                selected_opt[j]['selected'] = 'no';
               }
 
-            });
-
-          userpost[i]["post_like_count"] = 0;
-          userpost[i]["post_comments_count"] = 0;
-            let get_udata = [];
-              get_udata = get_user_data(user_id);
-              
-   	 					// if (get_udata.length > 0) 
-   	 					// {
-   	 					// 	userpost[i]['user_uploading_post'] = get_udata;
-   	 					// }
-   	 					// else
-   	 					// {
-   	 					// userpost[i]['user_uploading_post'] = get_udata;   	 						
-   	 					// }
-          
-                userpost[i]["userUploadingPost"] = [{profile_image : "1628353733hrithik-roshan.jpg",
-                                                username     : "test",
-                                                created_at   : "2021-08-14 09:50:18"
-                                              }];
-                if(userpost[i].type == "poll") {
-                  let selected_opt = [];
-                  await Posts_options.find({ post_id: post_id }).lean().then((selected_option) => {
-                      selected_opt = selected_option;
-                        
-                  });
-                      
-                    if(selected_opt.length > 0) {
-                      for(var j = 0 ; j < selected_opt.length; j++ ) {
-                        let option = [];
-                        let op_id = selected_opt[j]._id;
-                        await  Post_options_select_by_user.find({ post_id: post_id, user_id : user_id, option_id : op_id }).lean().then((option) => {
-                            option = option;
-                          });
-                            if(option.length > 0) {
-                              selected_opt[j]['selected'] = 'yes';
-                            }
-                            else {
-                              selected_opt[j]['selected'] = 'no';
-                            }
-                            
-                           let option_a = [];
-                          await Post_options_select_by_user.find({ post_id: post_id, option_id : op_id }).lean().then((option_aa) => {
-                            option_a = option_aa;
-                          });
-                          if(option_a.length > 0) {
-                            selected_opt[j]['selected_count'] = option_a.length;
-                          }
-                          else {
-                            selected_opt[j]['selected_count'] = 0;
-                          }
-                          selected_opt[j]['post_id'] = post_id;
+              let option_a = [];
+              await Post_options_select_by_user.find({ post_id: post_id, option_id: op_id }).lean().then((option_aa) => {
+                option_a = option_aa;
+              });
+              if (option_a.length > 0) {
+                selected_opt[j]['selected_count'] = option_a.length;
+              }
+              else {
+                selected_opt[j]['selected_count'] = 0;
+              }
+              selected_opt[j]['post_id'] = post_id;
 
 
-                      }
+            }
 
-                    }
-                    // selected_opt
-                  
-                  userpost[i]['post_options'] = selected_opt;
-                }
-                
-                if(userpost[i].type == "event") {
-                  let ava = 0;
-                  let reg_link_count = [];
-                 await  Event_link_user_list.find({ event_id: post_id }).lean().then((reg_link_count) => {
-                    reg_link_count = reg_link_count;
-                  });
-                  if(reg_link_count.length > 0) {
-                    // $HiddenProducts = explode(',',$reg_link_count[0]['user_id']);
-                    // if (in_array($user_id, $HiddenProducts)) 
-                    // {
-                    //   $ava = 'yes';
-                    // }
-                      //$data[$gkey]['event_register_count'] = $reg_link_count[0]['count'];
-                      userpost[i]['event_register_count'] = reg_link_count[0].count;
-                  }
-                  else {
-                    userpost[i]['event_register_count'] = 0;
-                  }
-                  userpost[i]['already_hit_button'] = ava;
+          }
+          // selected_opt
 
-                }
-
-                let attachments = [];
-                await Post_attachment.find({ post_id: post_id }).lean().then((attach) => {
-                  attachments = attach;
-                });
-                if (attachments.lenth > 0) {
-                  for(var j = 0 ; j < attachments.length; j++ ) {
-                    let att = attachments[j]['attachment'];
-                    if(att) {
-                      attachments[j]['attachment'] = "http://ec2-15-206-103-14.ap-south-1.compute.amazonaws.com:5000/"+att;;
-                    }
-                    else {
-                      attachments[j]['attachment'] = '';
-                    }
-                   }
-
-                }
-                userpost[i]["post_attachments"] = attachments;
-         
-          
+          userpost[i]['post_options'] = selected_opt;
         }
 
-        res.send({
-          status: true,
-          ws: ws,
-          message: "Successfully",
-          data: userpost
-          
+        if (userpost[i].type == "event") {
+          let ava = 0;
+          let reg_link_count = [];
+          await Event_link_user_list.find({ event_id: post_id }).lean().then((reg_link_count) => {
+            reg_link_count = reg_link_count;
+          });
+          if (reg_link_count.length > 0) {
+            // $HiddenProducts = explode(',',$reg_link_count[0]['user_id']);
+            // if (in_array($user_id, $HiddenProducts)) 
+            // {
+            //   $ava = 'yes';
+            // }
+            //$data[$gkey]['event_register_count'] = $reg_link_count[0]['count'];
+            userpost[i]['event_register_count'] = reg_link_count[0].count;
+          }
+          else {
+            userpost[i]['event_register_count'] = 0;
+          }
+          userpost[i]['already_hit_button'] = ava;
+
+        }
+
+        let attachments = [];
+        await Post_attachment.find({ post_id: post_id }).lean().then((attach) => {
+          attachments = attach;
         });
+        if (attachments.lenth > 0) {
+          for (var j = 0; j < attachments.length; j++) {
+            let att = attachments[j]['attachment'];
+            if (att) {
+              attachments[j]['attachment'] = "http://ec2-15-206-103-14.ap-south-1.compute.amazonaws.com:5000/" + att;;
+            }
+            else {
+              attachments[j]['attachment'] = '';
+            }
+          }
+
+        }
+        userpost[i]["post_attachments"] = attachments;
+
 
       }
-      else {
-        res.send({
-          status: true,
-          ws: ws,
-          message: "Successfully",
-          data: userpost
-        });
 
-      }
-     //////
+      res.send({
+        status: true,
+        ws: ws,
+        message: "Successfully",
+        data: userpost
+
+      });
+
+    }
+    else {
+      res.send({
+        status: true,
+        ws: ws,
+        message: "Successfully",
+        data: userpost
+      });
+
+    }
+    //////
   }
   else {
     res.send({
@@ -1321,26 +1329,26 @@ app.post("/homepage_data", async function (req, res) {
 //      let str = "http://ec2-15-206-103-14.ap-south-1.compute.amazonaws.com:5000/"+image;
 //      return str;
 //    }
-		
+
 //    	}
 
 app.use(express.static('uploads'));
-  app.get("/profile_imgs", async function (req, res) {
-    var baseUrl = `${req.protocol}://${req.headers.host}`+"/";
-    res.send({
-      status: true,
-      message: 'success',
-      ws: "profile_imgs",
-      data : baseUrl
-    });
-
-
+app.get("/profile_imgs", async function (req, res) {
+  var baseUrl = `${req.protocol}://${req.headers.host}` + "/";
+  res.send({
+    status: true,
+    message: 'success',
+    ws: "profile_imgs",
+    data: baseUrl
   });
 
 
+});
 
 
-app.post("/event_link_counter_hit", async function (req, res) {
+
+
+app.post("/event_link_counter_hit", auth, async function (req, res) {
   let event_id = req.body.event_id;
   let user_id = req.body.user_id;
   let language = req.body.language;
@@ -1354,21 +1362,21 @@ app.post("/event_link_counter_hit", async function (req, res) {
         count = old_users[0]['count'];
         u_id = old_users[0]['user_id'];
         // $myArray = explode(',', $u_id);
-          let add_data = {};
-        
-          let new_count = count + 1;
-          if(!u_id.includes(user_id)) {
-            u_id = u_id+","+user_id;
-            add_data['user_id'] = u_id;
-          }
-          add_data["count"] = new_count;
+        let add_data = {};
 
-            var myquery = { _id: event_id };
-              var newvalues = { $set: {adddata} };
-              Event_link_user_list.updateOne(myquery, newvalues, function (err, res) {
+        let new_count = count + 1;
+        if (!u_id.includes(user_id)) {
+          u_id = u_id + "," + user_id;
+          add_data['user_id'] = u_id;
+        }
+        add_data["count"] = new_count;
 
-            });
-        
+        var myquery = { _id: event_id };
+        var newvalues = { $set: { adddata } };
+        Event_link_user_list.updateOne(myquery, newvalues, function (err, res) {
+
+        });
+
       }
       else {
         additional_data = {
@@ -1489,7 +1497,7 @@ app.get("/userlist", (req, res) => {
 });
 
 
-app.post("/tokenupdate", (req, res) => {
+app.post("/tokenupdate", auth, (req, res) => {
   let user_id = req.body.id;
   let token = req.body.token;
 
@@ -1609,7 +1617,7 @@ app.get("/schooluniversitylist", (req, res) => {
 });
 
 
-app.post("/adduser", (req, res) => {
+app.post("/adduser", auth, (req, res) => {
 
   let username = req.body.username;
   let university_school_id = req.body.university_school_id;
@@ -1648,7 +1656,7 @@ app.post("/adduser", (req, res) => {
 
 });
 
-app.post("/getuserdetail", (req, res) => {
+app.post("/getuserdetail", auth, (req, res) => {
 
   let user_id = req.body.user_id;
 
@@ -1680,7 +1688,7 @@ app.post("/getuserdetail", (req, res) => {
 
 
 
-app.post("/updateuser", (req, res) => {
+app.post("/updateuser", auth, (req, res) => {
 
   let user_id = req.body.user_id;
   let username = req.body.username;
@@ -1721,7 +1729,7 @@ app.post("/updateuser", (req, res) => {
   })
 });
 
-app.post("/self-intro-update", (req, res) => {
+app.post("/self-intro-update", auth, (req, res) => {
 
   let user_id = req.body.user_id;
   let username = req.body.username;
@@ -1752,7 +1760,7 @@ app.post("/self-intro-update", (req, res) => {
   })
 });
 
-app.post("/personal-mission-update", (req, res) => {
+app.post("/personal-mission-update", auth, (req, res) => {
   let user_id = req.body.user_id;
   let username = req.body.username;
   let status = req.body.status;
@@ -1784,7 +1792,7 @@ app.post("/personal-mission-update", (req, res) => {
 
 });
 
-app.post("/personal-highlights-update", (req, res) => {
+app.post("/personal-highlights-update", auth, (req, res) => {
 
   let user_id = req.body.user_id;
   let currently_working = req.body.currently_working;
@@ -1835,7 +1843,7 @@ app.post("/personal-highlights-update", (req, res) => {
 
 });
 
-app.post("/social-profile", (req, res) => {
+app.post("/social-profile", auth, (req, res) => {
 
   let user_id = req.body.user_id;
   let facebook = req.body.facebook;
@@ -1873,7 +1881,7 @@ app.post("/social-profile", (req, res) => {
 
 });
 
-app.post("/user-interest-update", (req, res) => {
+app.post("/user-interest-update", auth, (req, res) => {
   let user_id = req.body.user_id;
   let interest_name = req.body.interest_name;
 
@@ -1911,7 +1919,7 @@ app.post("/user-interest-update", (req, res) => {
 
 });
 
-app.post("/user-languages-update", (req, res) => {
+app.post("/user-languages-update", auth, (req, res) => {
   let user_id = req.body.user_id;
   let language_name = req.body.language_name;
 
@@ -1947,7 +1955,7 @@ app.post("/user-languages-update", (req, res) => {
 
 });
 
-app.post("/user-course-update", (req, res) => {
+app.post("/user-course-update", auth, (req, res) => {
   let user_id = req.body.user_id;
   let name = req.body.name;
 
@@ -1985,7 +1993,7 @@ app.post("/user-course-update", (req, res) => {
 
 
 
-app.post("/education-list", (req, res) => {
+app.post("/education-list", auth, (req, res) => {
   let user_id = req.body.user_id;
   Education.find({ user_id: user_id })
     .then((data) => {
@@ -2012,7 +2020,7 @@ app.post("/education-list", (req, res) => {
 
 });
 
-app.post("/add-education", (req, res) => {
+app.post("/add-education", auth, (req, res) => {
   let user_id = req.body.user_id;
   let college_name = req.body.college_name;
   let concentration = req.body.concentration;
@@ -2065,7 +2073,7 @@ app.post("/add-education", (req, res) => {
 
 });
 
-app.post("/experience-list", (req, res) => {
+app.post("/experience-list", auth, (req, res) => {
   let user_id = req.body.user_id;
   Experience.find({ user_id: user_id })
     .then((data) => {
@@ -2092,7 +2100,7 @@ app.post("/experience-list", (req, res) => {
 
 });
 
-app.post("/add-experience", (req, res) => {
+app.post("/add-experience", auth, (req, res) => {
   let user_id = req.body.user_id;
   let company_name = req.body.company_name;
   let emp_type = req.body.emp_type;
@@ -2145,7 +2153,7 @@ app.post("/add-experience", (req, res) => {
 
 });
 
-app.post("/achievements-list", (req, res) => {
+app.post("/achievements-list", auth, (req, res) => {
   let user_id = req.body.user_id;
   Achievement.find({ user_id: user_id })
     .then((data) => {
@@ -2171,7 +2179,7 @@ app.post("/achievements-list", (req, res) => {
 
 });
 
-app.post("/add-achievements", (req, res) => {
+app.post("/add-achievements", auth, (req, res) => {
   let user_id = req.body.user_id;
   let certificate_name = req.body.certificate_name;
   let offered_by = req.body.offered_by;
@@ -2216,7 +2224,7 @@ app.post("/add-achievements", (req, res) => {
 
 
 
-app.post("/deleteuser", (req, res) => {
+app.post("/deleteuser", auth, (req, res) => {
   let user_id = req.body.user_id;
   User.remove({ _id: user_id })
     .then(() => {
@@ -2264,7 +2272,7 @@ app.get("/deleteuserlist", (req, res) => {
 });
 
 
-app.post("/show_friends", (req, res) => {
+app.post("/show_friends", auth, (req, res) => {
   let user_id = req.body.user_id;
   Friend_lists.find({ user_id: user_id })
     .then((data) => {
@@ -2344,7 +2352,7 @@ app.get("/category-list", (req, res) => {
 
 });
 
-app.post("/add-category", multer({ storage: storage }).single('image'), (req, res) => {
+app.post("/add-category", auth, multer({ storage: storage }).single('image'), (req, res) => {
 
   let name = req.body.name;
   let image = req.body.image;
@@ -2392,7 +2400,7 @@ app.post("/add-category", multer({ storage: storage }).single('image'), (req, re
 
 });
 
-app.post("/get-category", (req, res) => {
+app.post("/get-category", auth, (req, res) => {
   let catid = req.body.id;
 
   Categories.find({ _id: catid })
@@ -2464,7 +2472,7 @@ app.put("/update-category", (req, res) => {
 });
 
 
-app.post("/delete-category", (req, res) => {
+app.post("/delete-category", auth, (req, res) => {
   let catid = req.body.id;
   Categories.remove({ _id: catid })
     .then(() => {
@@ -2546,7 +2554,7 @@ app.put("/update-about-us", (req, res) => {
 });
 
 
-app.post("/update-account-info", (req, res) => {
+app.post("/update-account-info", auth, (req, res) => {
   let user_id = req.body.user_id;
   let first_name = req.body.first_name
   let last_name = req.body.last_name
@@ -2578,7 +2586,7 @@ app.post("/update-account-info", (req, res) => {
 
 
 
-app.post("/change-password", (req, res) => {
+app.post("/change-password", auth, (req, res) => {
   let user_id = req.body.user_id;
   let new_password = req.body.new_password;
 
@@ -2608,7 +2616,7 @@ app.post("/change-password", (req, res) => {
 });
 
 
-app.post("/profile-pic", multer({ storage: storage }).single('profile_image'), (req, res) => {
+app.post("/profile-pic", auth, multer({ storage: storage }).single('profile_image'), (req, res) => {
 
   let user_id = req.body.user_id;
   let filedata = req.file;
@@ -2637,7 +2645,7 @@ app.post("/profile-pic", multer({ storage: storage }).single('profile_image'), (
 });
 
 
-app.post("/contact-us", (req, res) => {
+app.post("/contact-us", auth, (req, res) => {
   let user_id = req.body.user_id;
   Contact_us.find({ user_id: user_id })
     .then((data) => {
@@ -2664,7 +2672,7 @@ app.post("/contact-us", (req, res) => {
 
 
 
-app.post("/Feedback-list", (req, res) => {
+app.post("/Feedback-list", auth, (req, res) => {
   let user_id = req.body.user_id;
   Feedback.find({ user_id: user_id })
     .then((data) => {
@@ -2715,7 +2723,7 @@ app.get("/brands-list", (req, res) => {
     });
 });
 
-app.post("/add-brand", (req, res) => {
+app.post("/add-brand", auth, (req, res) => {
 
   let categories_id = req.body.categories_id;
   let brand_name = req.body.brand_name;
@@ -2770,7 +2778,7 @@ app.post("/add-brand", (req, res) => {
 });
 
 
-app.post("/get-brand", (req, res) => {
+app.post("/get-brand", auth, (req, res) => {
   let brandid = req.body.brandid;
   Brands.find({ _id: brandid })
     .then((data) => {
@@ -2851,7 +2859,7 @@ app.put("/update-brand", (req, res) => {
 });
 
 
-app.post("/delete-brand", (req, res) => {
+app.post("/delete-brand", auth, (req, res) => {
   let brandid = req.body.id;
   Brands.remove({ _id: brandid })
     .then(() => {
@@ -2954,7 +2962,7 @@ app.get("/blog-banner-list", (req, res) => {
     });
 });
 
-app.post("/add-blog", (req, res) => {
+app.post("/add-blog", auth, (req, res) => {
   let categories_id = req.body.categories_id;
   let title = req.body.title;
   let description = req.body.description;
@@ -3009,7 +3017,7 @@ app.post("/add-blog", (req, res) => {
 
 });
 
-app.post("/get-blog", (req, res) => {
+app.post("/get-blog", auth, (req, res) => {
   let blogid = req.body.blogid;
   Blogs.find({ _id: blogid })
     .then((data) => {
@@ -3036,7 +3044,7 @@ app.post("/get-blog", (req, res) => {
 
 });
 
-app.post("/update-blog", (req, res) => {
+app.post("/update-blog", auth, (req, res) => {
   let id = req.body.id;
   let categories_id = req.body.categories_id;
   let title = req.body.title;
@@ -3090,7 +3098,7 @@ app.post("/update-blog", (req, res) => {
 
 });
 
-app.post("/delete-blog", (req, res) => {
+app.post("/delete-blog", auth, (req, res) => {
   let blogid = req.body.id;
   Blogs.remove({ _id: blogid })
     .then(() => {
@@ -3155,7 +3163,7 @@ app.get("/all-post-list", (req, res) => {
 });
 
 
-app.post("/posts-list", (req, res) => {
+app.post("/posts-list", auth, (req, res) => {
   let user_id = req.body.user_id;
   Posts.find({ user_id: user_id })
     .then((data) => {
@@ -3194,7 +3202,7 @@ app.post("/add-post", multer({ storage: storage }).single('group_image'), (req, 
 
 
 
-app.post("/delete-post", (req, res) => {
+app.post("/delete-post", auth, (req, res) => {
   let post_id = req.body.post_id;
   Posts.remove({ _id: post_id })
     .then(() => {
@@ -3248,7 +3256,7 @@ app.get("/redeem-user-list", (req, res) => {
 
 
 
-app.post("/delete-redeem-user", (req, res) => {
+app.post("/delete-redeem-user", auth, (req, res) => {
   let rid = req.body.rid;
   Redeem_user.remove({ _id: rid })
     .then(() => {
@@ -3297,7 +3305,7 @@ app.get("/faq-list", (req, res) => {
 });
 
 
-app.post("/add-faq", (req, res) => {
+app.post("/add-faq", auth, (req, res) => {
   let question = req.body.question;
   let answer = req.body.answer;
   let status = req.body.status;
@@ -3367,7 +3375,7 @@ app.get("/group-list", (req, res) => {
 });
 
 
-app.post("/add-group", multer({ storage: storage }).single('group_image'), (req, res) => {
+app.post("/add-group", auth, multer({ storage: storage }).single('group_image'), (req, res) => {
 
   let group_name = req.body.group_name;
   let university_group_id = req.body.university_group_id;
@@ -3479,7 +3487,7 @@ app.put("/update-terms-conditions", (req, res) => {
 
 //***************  Blog banner  ****************************/
 
-app.post("/add-blog-banner", multer({ storage: storage }).single('image'), (req, res) => {
+app.post("/add-blog-banner", auth, multer({ storage: storage }).single('image'), (req, res) => {
 
   let status = req.body.status;
   let imagedata = req.file;
@@ -3517,7 +3525,7 @@ app.post("/add-blog-banner", multer({ storage: storage }).single('image'), (req,
 
 
 
-app.post("/update-blog-banner", multer({ storage: storage }).single('image'), (req, res) => {
+app.post("/update-blog-banner", auth, multer({ storage: storage }).single('image'), (req, res) => {
 
   let bid = req.body.bid;
   let status = req.body.status;
@@ -3557,7 +3565,7 @@ app.post("/update-blog-banner", multer({ storage: storage }).single('image'), (r
 });
 
 
-app.post("/delete-blog-banner", (req, res) => {
+app.post("/delete-blog-banner", auth, (req, res) => {
   let bid = req.body.bid;
   Blog_banner.remove({ _id: bid })
     .then(() => {
@@ -3583,7 +3591,7 @@ app.post("/delete-blog-banner", (req, res) => {
 
 //**************************Manoj APIs starts******************************/
 
-app.post("/create_group", multer({ storage: storage }).single('group_image'), (req, res) => {
+app.post("/create_group", auth, multer({ storage: storage }).single('group_image'), (req, res) => {
   let group_name = req.body.group_name;
   let university_group_id = req.body.university_group_id;
   let created_by = req.body.created_by;
@@ -3624,8 +3632,8 @@ app.post("/create_group", multer({ storage: storage }).single('group_image'), (r
 
 });
 
-app.post("/report_post", (req, res) => {
-  
+app.post("/report_post", auth, (req, res) => {
+
   let user_id = req.body.user_id;
   let report_post_id = req.body.report_post_id;
   let type = req.body.type;
@@ -3638,27 +3646,28 @@ app.post("/report_post", (req, res) => {
   let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
   let dateTime = date + ' ' + time;
 
-  if(user_id && report_post_id) {
-      Posts.find({_id : report_post_id })
-        .then((postsdata) => {
-          
+  if (user_id && report_post_id) {
+    Posts.find({ _id: report_post_id })
+      .then((postsdata) => {
+
         let uid = postsdata[0]._id;
-        if(user_id == uid) {
+        if (user_id == uid) {
           res.send({
-            status : false,
-            message : "You can not report by your self .",
-            ws : ws
+            status: false,
+            message: "You can not report by your self .",
+            ws: ws
           });
         }
         else {
 
-          let userpost = {"user_id"       : user_id,
-                          "report_post_id" : report_post_id,
-                          "type"          : type,
-                          "reason"        : reason,
-                          "created_at"    : dateTime
+          let userpost = {
+            "user_id": user_id,
+            "report_post_id": report_post_id,
+            "type": type,
+            "reason": reason,
+            "created_at": dateTime
 
-                        };
+          };
           const report_user_post = new Report_user_post(userpost);
           report_user_post.save().then(() => {
             res.send({
@@ -3673,37 +3682,37 @@ app.post("/report_post", (req, res) => {
               ws: ws
             });
           })
-            
+
 
         }
-        
+
 
       })
       .catch((e) => {
         res.send({
-          status : false,
-          message : "error"+e,
-          ws : ws
+          status: false,
+          message: "error" + e,
+          ws: ws
         });
       });
-    
+
   }
   else {
     res.send({
-      status : false,
+      status: false,
       message: "user id and report post id is required.",
-      ws      : ws
+      ws: ws
 
-      });
+    });
   }
 });
 
-app.post("/report_user", (req, res) => {
+app.post("/report_user", auth, (req, res) => {
 
-  let report_user_id  = req.body.report_user_id;
-  let user_id         = req.body.user_id;
-  let type            = req.body.type;
-  let reason          = req.body.reason;
+  let report_user_id = req.body.report_user_id;
+  let user_id = req.body.user_id;
+  let type = req.body.type;
+  let reason = req.body.reason;
   let language = "en";
   let ws = "report_user";
 
@@ -3711,38 +3720,39 @@ app.post("/report_user", (req, res) => {
   let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
   let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
   let dateTime = date + ' ' + time;
-  
+
   if (report_user_id) {
 
-    if(report_user_id != user_id) {
-      
-      Report_user_post.find({report_user_id : report_user_id , user_id : user_id })
+    if (report_user_id != user_id) {
+
+      Report_user_post.find({ report_user_id: report_user_id, user_id: user_id })
         .then((reportdata) => {
           if (reportdata.length == 0) {
 
-            let reportArr = {"user_id" : user_id,
-                            "report_user_id" : report_user_id,
-                            "type"      : type,
-                            "reason"    : reason,
-                            "created_at" : dateTime
+            let reportArr = {
+              "user_id": user_id,
+              "report_user_id": report_user_id,
+              "type": type,
+              "reason": reason,
+              "created_at": dateTime
 
-                             };
+            };
             const report_user_post = new Report_user_post(reportArr);
-              report_user_post.save().then(() => {
-                res.send({
-                  status: true,
-                  message: "Thanks for letting us know , Your feedback is important in helping us keep the unilife community safe.",
-                  ws: ws
-                });
-              }).catch((e) => {
-                res.send({
-                  status: false,
-                  message: "Something went wrong!" + e,
-                  ws: ws
-                });
-              })
+            report_user_post.save().then(() => {
+              res.send({
+                status: true,
+                message: "Thanks for letting us know , Your feedback is important in helping us keep the unilife community safe.",
+                ws: ws
+              });
+            }).catch((e) => {
+              res.send({
+                status: false,
+                message: "Something went wrong!" + e,
+                ws: ws
+              });
+            })
 
-            
+
           } else {
             res.send({
               status: false,
@@ -3754,41 +3764,41 @@ app.post("/report_user", (req, res) => {
         })
         .catch((e) => {
           res.send({
-            status : false,
-            message : "error"+e,
-            ws : ws
+            status: false,
+            message: "error" + e,
+            ws: ws
           });
         });
 
     }
     else {
       res.send({
-        status : false,
+        status: false,
         message: "You can not report by your self.",
-        ws      : ws
-  
-        });
-      
+        ws: ws
+
+      });
+
     }
   }
   else {
     res.send({
-      status : false,
+      status: false,
       message: "report_user_id is required.",
-      ws      : ws
+      ws: ws
 
-      });
+    });
   }
 });
 
-app.post("/create_poll", (req, res) => {
-  
+app.post("/create_poll", auth, (req, res) => {
+
   let user_id = req.body.user_id;
-  
+
   let question = req.body.question;
   let options = req.body.options
   let language = 'en';
-  let ws        = 'create_poll';
+  let ws = 'create_poll';
   let post_through_group = "";
   let university_school_id = "";
   let group_id = "";
@@ -3798,98 +3808,100 @@ app.post("/create_poll", (req, res) => {
   let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
   let dateTime = date + ' ' + time;
 
-  if(user_id) {
-    if(group_id){
+  if (user_id) {
+    if (group_id) {
       post_through_group = "yes";
     }
     else {
       post_through_group = "no";
     }
 
-    if(options) {
+    if (options) {
       User.find({ _id: user_id })
         .then((data) => {
           university_school_id = data[0].university_school_id;
 
-          let postdata = {"group_id" : group_id,
-                          "post_through_group" : post_through_group,
-                          "user_id"    : user_id,
-                          "question"   : question,
-                          "university_post_id" : university_school_id,
-                          "type"          : "poll",
-                          "caption"    : "",
-                          "location_name"  : "",
-                          "status"          : "active",
-                          "event_title"     : "",
-                          "event_link"      : "",
-                          "event_description" : "",
-                          "created_at"      : dateTime,
-                          "updated_at"      : dateTime
+          let postdata = {
+            "group_id": group_id,
+            "post_through_group": post_through_group,
+            "user_id": user_id,
+            "question": question,
+            "university_post_id": university_school_id,
+            "type": "poll",
+            "caption": "",
+            "location_name": "",
+            "status": "active",
+            "event_title": "",
+            "event_link": "",
+            "event_description": "",
+            "created_at": dateTime,
+            "updated_at": dateTime
 
-                          }
-            
+          }
+
           const posts = new Posts(postdata);
           posts.save().then((pdata) => {
             let id = pdata._id;
-            
-           let num =  Object.keys(options).length;
-         
-            if(num > 0) {
-                 let str = "";
-                 for(let i = 0; i < num ; i++) {
-                   if(i == 0) {
-                      str = options.option1;
-                   }
-                   if(i == 1) {
-                    str = options.option2;
-                   }
-                  if(i == 2) {
-                    str = options.option3;
-                  }
-                  if(i == 3) {
-                    str = options.option4;
-                  }
-                  if(i == 4) {
-                    str = options.option5;
-                  }
-                  if(i == 5) {
-                    str = options.option6;
-                  }
-                  if(i == 6) {
-                    str = options.option7;
-                  }
-                  if(i == 7) {
-                    str = options.option8;
-                  }
-                  if(i == 8) {
-                    str = options.option9;
-                  }
-                  if(i == 9) {
-                    str = options.option10;
-                  }
-                 let optiondata = {"user_id" : user_id,
-                                    "options" : str,
-                                    "post_id" : id.toString(),
-                                    "created_at"      : dateTime,
-                                    "updated_at"      : dateTime
 
-                                  }
-                   console.log(optiondata);
-                    const posts_options = new Posts_options(optiondata);
-                    posts_options.save().then(() => {
-                      
+            let num = Object.keys(options).length;
 
-                    }).catch((e) => {
-                    
-                    })
+            if (num > 0) {
+              let str = "";
+              for (let i = 0; i < num; i++) {
+                if (i == 0) {
+                  str = options.option1;
+                }
+                if (i == 1) {
+                  str = options.option2;
+                }
+                if (i == 2) {
+                  str = options.option3;
+                }
+                if (i == 3) {
+                  str = options.option4;
+                }
+                if (i == 4) {
+                  str = options.option5;
+                }
+                if (i == 5) {
+                  str = options.option6;
+                }
+                if (i == 6) {
+                  str = options.option7;
+                }
+                if (i == 7) {
+                  str = options.option8;
+                }
+                if (i == 8) {
+                  str = options.option9;
+                }
+                if (i == 9) {
+                  str = options.option10;
+                }
+                let optiondata = {
+                  "user_id": user_id,
+                  "options": str,
+                  "post_id": id.toString(),
+                  "created_at": dateTime,
+                  "updated_at": dateTime
+
+                }
+                console.log(optiondata);
+                const posts_options = new Posts_options(optiondata);
+                posts_options.save().then(() => {
+
+
+                }).catch((e) => {
+
+                })
               }
               res.send({
-                        status: true,
-                        message: "Post added successfully"
-                      });
+                status: true,
+                message: "Post added successfully"
+              });
 
             }
-            
+
           }).catch((e) => {
             res.send({
               status: false,
@@ -3907,9 +3919,9 @@ app.post("/create_poll", (req, res) => {
     }
     else {
       res.send({
-        status   : false ,
-        ws       : ws ,
-        message  : 'Invalid resuest'
+        status: false,
+        ws: ws,
+        message: 'Invalid resuest'
       });
 
     }
@@ -3917,15 +3929,15 @@ app.post("/create_poll", (req, res) => {
   }
   else {
     res.send({
-      status : false ,
-      ws      : ws ,
-      message : 'Invalid resuest'
+      status: false,
+      ws: ws,
+      message: 'Invalid resuest'
     });
 
   }
 });
 
-app.post('/create_event', multer({ storage: storage }).single('image'), (req, res) => {
+app.post('/create_event', auth, multer({ storage: storage }).single('image'), (req, res) => {
   let event_title = req.body.event_title;
   let event_link = req.body.event_link;
   let event_description = req.body.event_description;
@@ -3944,9 +3956,9 @@ app.post('/create_event', multer({ storage: storage }).single('image'), (req, re
   let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
   let dateTime = date + ' ' + time;
 
-  
-  if(user_id) {
-    if(group_id){
+
+  if (user_id) {
+    if (group_id) {
       // check_group_available_not function params: user_id, group_id
       post_through_group = "yes";
     }
@@ -3954,82 +3966,84 @@ app.post('/create_event', multer({ storage: storage }).single('image'), (req, re
       post_through_group = "no";
     }
     User.find({ _id: user_id })
-        .then((data) => {
-          university_school_id = data[0].university_school_id;
+      .then((data) => {
+        university_school_id = data[0].university_school_id;
 
-          let eventdata = {"group_id" : group_id,
-                          "post_through_group" : post_through_group,
-                          "user_id"    : user_id,
-                          "question"   : "",
-                          "university_post_id" : university_school_id,
-                          "type"          : "event",
-                          "caption"    : "",
-                          "location_name"  : "",
-                          "status"          : "active",
-                          "event_title"     : event_title,
-                          "event_link"      : event_link,
-                          "event_description" : event_description,
-                          "created_at"      : dateTime,
-                          "updated_at"      : dateTime
+        let eventdata = {
+          "group_id": group_id,
+          "post_through_group": post_through_group,
+          "user_id": user_id,
+          "question": "",
+          "university_post_id": university_school_id,
+          "type": "event",
+          "caption": "",
+          "location_name": "",
+          "status": "active",
+          "event_title": event_title,
+          "event_link": event_link,
+          "event_description": event_description,
+          "created_at": dateTime,
+          "updated_at": dateTime
 
-                          }
-         
-          const posts = new Posts(eventdata);
-          posts.save().then((pdata) => {
-            let id = pdata._id;
-              if(event_images) {  
-                 let optiondata = {"attachment" : event_images.filename,
-                                    "attachment_type" : "image",
-                                    "post_id" : id
+        }
 
-                                  }
-                    // post_attachments
-                    const posts_attach = new Post_attachment(optiondata);
-                    posts_attach.save().then(() => {
-                      res.send({
-                        status: true,
-                        ws    : ws,
-                        message: "Event added successfully"
-                      });
-                     
+        const posts = new Posts(eventdata);
+        posts.save().then((pdata) => {
+          let id = pdata._id;
+          if (event_images) {
+            let optiondata = {
+              "attachment": event_images.filename,
+              "attachment_type": "image",
+              "post_id": id
 
-                    }).catch((e) => {
-                      res.send({
-                        status: false,
-                        ws    : ws,
-                        message: " event attachment failed to save"
-                      });
-                      
+            }
+            // post_attachments
+            const posts_attach = new Post_attachment(optiondata);
+            posts_attach.save().then(() => {
+              res.send({
+                status: true,
+                ws: ws,
+                message: "Event added successfully"
+              });
 
-                    })
-                }
 
-            res.send({
-              status: true,
-              ws    : ws,
-              message: "event added successfully"
-            });
-            
-          }).catch((e) => {
-            res.send({
-              status: false,
-              message: "Something went wrong!" + e
-            });
-          })
+            }).catch((e) => {
+              res.send({
+                status: false,
+                ws: ws,
+                message: " event attachment failed to save"
+              });
+
+
+            })
+          }
+
+          res.send({
+            status: true,
+            ws: ws,
+            message: "event added successfully"
+          });
+
         }).catch((e) => {
           res.send({
             status: false,
             message: "Something went wrong!" + e
           });
-
+        })
+      }).catch((e) => {
+        res.send({
+          status: false,
+          message: "Something went wrong!" + e
         });
-   
+
+      });
+
   }
   else {
     res.send({
-      status : false ,
-      ws      : ws ,
-      message : 'Invalid resuest'
+      status: false,
+      ws: ws,
+      message: 'Invalid resuest'
     });
 
   }
@@ -4037,7 +4051,7 @@ app.post('/create_event', multer({ storage: storage }).single('image'), (req, re
 });
 
 
-app.post("/delete_post", (req, res) => {
+app.post("/delete_post", auth, (req, res) => {
 
   res.send({
     status: false,
@@ -4046,7 +4060,7 @@ app.post("/delete_post", (req, res) => {
 
 });
 
-app.post("/profile_update", (req, res) => {
+app.post("/profile_update", auth, (req, res) => {
 
   res.send({
     status: false,
@@ -4055,290 +4069,21 @@ app.post("/profile_update", (req, res) => {
 
 });
 
-app.post("/categories_view_all_in_brand", (req, res) => {
+app.post("/categories_view_all_in_brand", auth, (req, res) => {
 
 
 });
 
 
 
-app.post("/add_comment", async function (req , res)  {
+app.post("/add_comment", auth, async function (req, res) {
   let user_id = req.body.user_id;
   let post_id = req.body.post_id;
   let comment = req.body.comment;
   let ws = "add_comment";
 
   let userpostdata = [];
-  let comData     = [];
-
-   //************  time stamp  **************************/
-   let today = new Date();
-   let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
-   let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-   let dateTime = date + ' ' + time;
- 
-   //************  time stamp  **************************/
-
-    let commentData = {"user_id"     : user_id,
-                      "post_id"     : post_id,
-                      "comment"     : comment,
-                      "created_at"  : dateTime,
-                      "updated_at"  : dateTime
-
-                      };
-
-        const comments = new Comments(commentData);
-        comments.save().then(() => {
-          
-            
-            
-                // res.send({
-                //     status: true,
-                //     message: "comment success",
-                //     ws      : ws,
-                //     data    : [ { _id  : "3456785434567875",
-                //                   comment : "vvgvg",
-                //                   created_by :  "",
-                //                   user_id   : "3456785434567875",
-                //                   user_data : [{profile_image : "1628353733hrithik-roshan.jpg",
-                //                                 username     : "test",
-                //                                 created_at   : "2021-08-14 09:50:18"
-                //                               } ],
-                //                   like_users : [],
-                //                   likeUsersCount :  0,
-                //                   is_like :  false,
-                //                   reply_count : 0,
-                //                   reply_comment : []
-                //                 }]
-                //     });
-  
-        })
-        // .catch((e) => {
-        //   res.send({
-        //     status: false,
-        //     message: "something went wrong " + e
-  
-        //   });
-        // });   
-
-        await Comments.find({ post_id: post_id } ).lean().sort({_id: -1}).then((commentsData) => {
-          comData = commentsData;
-          
-        })
-
-        if(comData.length > 0) {
-          let comment_user_data = '1628353733hrithik-roshan.jpg';
-          let reply  = [];
-          for(let i = 0; i < comData.length ; i++ ) {
-  
-              User.find({ _id: comData[i].user_id } ).lean().then((profiledata) => {
-      
-              if(profiledata.length > 0) {
-                comment_user_data =  profiledata[0].profile_image;
-              }
-              
-            })
-
-            comData[i]['user_data']  = [{profile_image : "1628353733hrithik-roshan.jpg",
-                                                username     : "sack",
-                                                created_at   : "2021-08-14 09:50:18"
-                                              } ];
-                                  
-            comData[i]['like_users'] 	= [];                   
-          comData[i]['is_like'] 	= false;
-  
-          await Comment_replies.find({ comment_id: comData[i]._id } ).lean().sort({_id: -1}).then((replyData) => {
-            reply = replyData;
-  
-            if(reply.length > 0) {
-              for (let index = 0; index < reply.length; index++) {
-                let reply_uid = $rvalue['user_id'];
-                let reply_cid = $rvalue['id'];
-                 reply[i]['is_like'] = false;
-                   
-  
-                  
-              }
-  
-            }
-            comData[i]['reply_count'] = reply.length;
-            comData[i]['reply_comment'] = reply;
-            
-          })
-  
-          }
-  
-          res.send({
-            status: true,
-            ws     : "add_comment",
-            message: "Successfully",
-            data  : comData
-          });
-  
-          
-            
-        }
-        else {
-          res.send({
-            status: true,
-            ws     : "add_comment",
-            message: "No comments available",
-            data  : comData
-          });
-  
-        }
-
-
-});
-
-
-app.post("/get_post_comment", async function (req , res)  {
-  let post_id     = req.body.post_id;
-  let language    = "en";
-  let ws          = req.body.ws;
-  let user_id     = req.body.user_id;
-  let userpostdata = [];
-  let comData     = [];
-	if(user_id) {
-    await Posts.find({ _id: post_id } ).lean().then((postdata) => {
-      userpostdata = postdata;
-    })
-
-    if(userpostdata.length > 0) {
-      await Comments.find({ post_id: post_id } ).lean().sort({_id: -1}).then((commentsData) => {
-        comData = commentsData;
-        
-      })
-      if(comData.length > 0) {
-        let comment_user_data = [{profile_image : "1628353733hrithik-roshan.jpg",
-                                  username     : "test",
-                                  created_at   : "2021-08-14 09:50:18"
-                                }];
-        let reply  = [];
-        for(let i = 0; i < comData.length ; i++ ) {
-
-            User.find({ _id: comData[i].user_id } ).lean().then((profiledata) => {
-    
-            if(profiledata.length > 0) {
-              // comment_user_data =  profiledata[0].profile_image;
-              // comment_user_data =  profiledata[0].username;
-              // comment_user_data =  profiledata[0].created_at;
-            }
-            
-          })
-          // get_comment_likes($cvalue['id'])
-
-        comData[i]['user_data'] 	= comment_user_data;
-        comData[i]['like_users'] 	= [];
-        comData[i]['like_users_count'] 	= 0;
-
-        // is_in_wish_list_child($cvalue['user_id'],$comment_id)
-        comData[i]['is_like'] 	= false;
-
-        await Comment_replies.find({ comment_id: comData[i]._id } ).lean().sort({_id: -1}).then((replyData) => {
-          reply = replyData;
-
-          if(reply.length > 0) {
-            for (let index = 0; index < reply.length; index++) {
-              let reply_uid = $rvalue['user_id'];
-							let reply_cid = $rvalue['id'];
-
-                  reply[i]['is_like'] = false;
-                  reply[i]['user_data'] = ''
-                  reply[i]['like_users_reply'] = ''
-                  reply[i]['like_users_count_reply'] = 0;
-
-                // $is_in_wis_child = $this->is_in_wish_list_child_reply($reply_uid,$reply_cid);
-								// $reply[$rkey]['is_like'] = $is_in_wis_child;
-
-								// $reply_user_data = $this->get_user_data($reply_uid);
-								// $reply[$rkey]['user_data'] 	= $reply_user_data;
-
-								// $get_nlikes = $this->get_comment_likes($rvalue['comment_id']);
-								// $reply[$rkey]['like_users_reply'] 	= $get_nlikes;
-								// $reply[$rkey]['like_users_count_reply'] 	= count($get_nlikes);
-
-            }
-
-          }
-          comData[i]['reply_count'] = reply.length;
-					comData[i]['reply_comment'] = reply;
-          
-        })
-
-        }
-
-        res.send({
-          status: true,
-          ws     : "get_post_comment",
-          message: "Successfully",
-          data  : comData
-        });
-
-        
-          
-      }
-      else {
-        res.send({
-          status: true,
-          ws     : "get_post_comment",
-          message: "No comments available",
-          data  : ''
-        });
-
-      }
-      
-    }
-    else {
-       res.send({
-        status: false,
-        ws     : "get_post_comment",
-        message: "Invalid post request"
-      });
-
-    }
-  
-  }
-  else {
-    res.send({
-      status: false,
-      ws     : "get_post_comment",
-      message: "Invalid user id request"
-    });
-  }
-
-});
-
-
-async function get_user_data(uid) {
-  let data = '';
-  
-  if(uid) {
-    await   User.find({ _id: uid } ).lean().then((userdata) => {
-      
-        if(userdata.length > 0) {
-          return userdata[0].profile_image;
-        }
-        else {
-          return data;
-        }
-    })
-  }
-  else {
-    return data;
-  }
-}
-
-
-app.post("/like_unlike_post", async function (req , res)  {
-  let post_id     = req.body.post_id;
-  let language    = "en";
-  let user_id     = req.body.user_id;
-  let ws          = "like_unlike_post";
-  let type        = "P";
-
-  let alldata = [];
-  let count   = 1;
+  let comData = [];
 
   //************  time stamp  **************************/
   let today = new Date();
@@ -4348,49 +4093,323 @@ app.post("/like_unlike_post", async function (req , res)  {
 
   //************  time stamp  **************************/
 
-    await  Post_comment_likes.find({ post_comment_id: post_id, user_id : user_id } ).lean().then((lcdata) => {
-     
-      if(lcdata.length > 0) {
-        Post_comment_likes.deleteOne({ post_comment_id: post_id, user_id : user_id })
-          .then((data) => { 
-            
+  let commentData = {
+    "user_id": user_id,
+    "post_id": post_id,
+    "comment": comment,
+    "created_at": dateTime,
+    "updated_at": dateTime
+
+  };
+
+  const comments = new Comments(commentData);
+  comments.save().then(() => {
+
+
+
+    // res.send({
+    //     status: true,
+    //     message: "comment success",
+    //     ws      : ws,
+    //     data    : [ { _id  : "3456785434567875",
+    //                   comment : "vvgvg",
+    //                   created_by :  "",
+    //                   user_id   : "3456785434567875",
+    //                   user_data : [{profile_image : "1628353733hrithik-roshan.jpg",
+    //                                 username     : "test",
+    //                                 created_at   : "2021-08-14 09:50:18"
+    //                               } ],
+    //                   like_users : [],
+    //                   likeUsersCount :  0,
+    //                   is_like :  false,
+    //                   reply_count : 0,
+    //                   reply_comment : []
+    //                 }]
+    //     });
+
+  })
+  // .catch((e) => {
+  //   res.send({
+  //     status: false,
+  //     message: "something went wrong " + e
+
+  //   });
+  // });   
+
+  await Comments.find({ post_id: post_id }).lean().sort({ _id: -1 }).then((commentsData) => {
+    comData = commentsData;
+
+  })
+
+  if (comData.length > 0) {
+    let comment_user_data = '1628353733hrithik-roshan.jpg';
+    let reply = [];
+    for (let i = 0; i < comData.length; i++) {
+
+      User.find({ _id: comData[i].user_id }).lean().then((profiledata) => {
+
+        if (profiledata.length > 0) {
+          comment_user_data = profiledata[0].profile_image;
+        }
+
+      })
+
+      comData[i]['user_data'] = [{
+        profile_image: "1628353733hrithik-roshan.jpg",
+        username: "sack",
+        created_at: "2021-08-14 09:50:18"
+      }];
+
+      comData[i]['like_users'] = [];
+      comData[i]['is_like'] = false;
+
+      await Comment_replies.find({ comment_id: comData[i]._id }).lean().sort({ _id: -1 }).then((replyData) => {
+        reply = replyData;
+
+        if (reply.length > 0) {
+          for (let index = 0; index < reply.length; index++) {
+            let reply_uid = $rvalue['user_id'];
+            let reply_cid = $rvalue['id'];
+            reply[i]['is_like'] = false;
+
+
+
+          }
+
+        }
+        comData[i]['reply_count'] = reply.length;
+        comData[i]['reply_comment'] = reply;
+
+      })
+
+    }
+
+    res.send({
+      status: true,
+      ws: "add_comment",
+      message: "Successfully",
+      data: comData
+    });
+
+
+
+  }
+  else {
+    res.send({
+      status: true,
+      ws: "add_comment",
+      message: "No comments available",
+      data: comData
+    });
+
+  }
+
+
+});
+
+
+app.post("/get_post_comment", auth, async function (req, res) {
+  let post_id = req.body.post_id;
+  let language = "en";
+  let ws = req.body.ws;
+  let user_id = req.body.user_id;
+  let userpostdata = [];
+  let comData = [];
+  if (user_id) {
+    await Posts.find({ _id: post_id }).lean().then((postdata) => {
+      userpostdata = postdata;
+    })
+
+    if (userpostdata.length > 0) {
+      await Comments.find({ post_id: post_id }).lean().sort({ _id: -1 }).then((commentsData) => {
+        comData = commentsData;
+
+      })
+      if (comData.length > 0) {
+        let comment_user_data = [{
+          profile_image: "1628353733hrithik-roshan.jpg",
+          username: "test",
+          created_at: "2021-08-14 09:50:18"
+        }];
+        let reply = [];
+        for (let i = 0; i < comData.length; i++) {
+
+          User.find({ _id: comData[i].user_id }).lean().then((profiledata) => {
+
+            if (profiledata.length > 0) {
+              // comment_user_data =  profiledata[0].profile_image;
+              // comment_user_data =  profiledata[0].username;
+              // comment_user_data =  profiledata[0].created_at;
+            }
+
           })
-        
+          // get_comment_likes($cvalue['id'])
+
+          comData[i]['user_data'] = comment_user_data;
+          comData[i]['like_users'] = [];
+          comData[i]['like_users_count'] = 0;
+
+          // is_in_wish_list_child($cvalue['user_id'],$comment_id)
+          comData[i]['is_like'] = false;
+
+          await Comment_replies.find({ comment_id: comData[i]._id }).lean().sort({ _id: -1 }).then((replyData) => {
+            reply = replyData;
+
+            if (reply.length > 0) {
+              for (let index = 0; index < reply.length; index++) {
+                let reply_uid = $rvalue['user_id'];
+                let reply_cid = $rvalue['id'];
+
+                reply[i]['is_like'] = false;
+                reply[i]['user_data'] = ''
+                reply[i]['like_users_reply'] = ''
+                reply[i]['like_users_count_reply'] = 0;
+
+                // $is_in_wis_child = $this->is_in_wish_list_child_reply($reply_uid,$reply_cid);
+                // $reply[$rkey]['is_like'] = $is_in_wis_child;
+
+                // $reply_user_data = $this->get_user_data($reply_uid);
+                // $reply[$rkey]['user_data'] 	= $reply_user_data;
+
+                // $get_nlikes = $this->get_comment_likes($rvalue['comment_id']);
+                // $reply[$rkey]['like_users_reply'] 	= $get_nlikes;
+                // $reply[$rkey]['like_users_count_reply'] 	= count($get_nlikes);
+
+              }
+
+            }
+            comData[i]['reply_count'] = reply.length;
+            comData[i]['reply_comment'] = reply;
+
+          })
+
+        }
+
+        res.send({
+          status: true,
+          ws: "get_post_comment",
+          message: "Successfully",
+          data: comData
+        });
+
+
+
       }
       else {
-        let post_comment = {"post_comment_id" : post_id,
-                      "user_id"         : user_id,
-                      "type"            : type,
-                      "created_at"      : dateTime,
-                      "updated_at"      : dateTime
-                      };
-       const post_l_c = new Post_comment_likes(post_comment);
-       post_l_c.save().then((data) => {
-         
-       })
- 
+        res.send({
+          status: true,
+          ws: "get_post_comment",
+          message: "No comments available",
+          data: ''
+        });
+
+      }
+
+    }
+    else {
+      res.send({
+        status: false,
+        ws: "get_post_comment",
+        message: "Invalid post request"
+      });
+
+    }
+
+  }
+  else {
+    res.send({
+      status: false,
+      ws: "get_post_comment",
+      message: "Invalid user id request"
+    });
+  }
+
+});
+
+
+async function get_user_data(uid) {
+  let data = '';
+
+  if (uid) {
+    await User.find({ _id: uid }).lean().then((userdata) => {
+
+      if (userdata.length > 0) {
+        return userdata[0].profile_image;
+      }
+      else {
+        return data;
       }
     })
+  }
+  else {
+    return data;
+  }
+}
 
-    
-    await  Post_comment_likes.find({post_comment_id : post_id } ).lean().then((useralldata) => {
-      
-      
-      alldata = useralldata;
-      count = useralldata.length;
 
-    })
+app.post("/like_unlike_post", auth, async function (req, res) {
+  let post_id = req.body.post_id;
+  let language = "en";
+  let user_id = req.body.user_id;
+  let ws = "like_unlike_post";
+  let type = "P";
 
-     res.send({
-        response: true,
-        ws     : "like_unlike_post",
-        message: "success",
-        data    : {"count" : count,
-                   "rows" : []
+  let alldata = [];
+  let count = 1;
 
-                  }
-      });
-    
+  //************  time stamp  **************************/
+  let today = new Date();
+  let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+  let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let dateTime = date + ' ' + time;
+
+  //************  time stamp  **************************/
+
+  await Post_comment_likes.find({ post_comment_id: post_id, user_id: user_id }).lean().then((lcdata) => {
+
+    if (lcdata.length > 0) {
+      Post_comment_likes.deleteOne({ post_comment_id: post_id, user_id: user_id })
+        .then((data) => {
+
+        })
+
+    }
+    else {
+      let post_comment = {
+        "post_comment_id": post_id,
+        "user_id": user_id,
+        "type": type,
+        "created_at": dateTime,
+        "updated_at": dateTime
+      };
+      const post_l_c = new Post_comment_likes(post_comment);
+      post_l_c.save().then((data) => {
+
+      })
+
+    }
+  })
+
+
+  await Post_comment_likes.find({ post_comment_id: post_id }).lean().then((useralldata) => {
+
+
+    alldata = useralldata;
+    count = useralldata.length;
+
+  })
+
+  res.send({
+    response: true,
+    ws: "like_unlike_post",
+    message: "success",
+    data: {
+      "count": count,
+      "rows": []
+
+    }
+  });
+
 
 });
 
