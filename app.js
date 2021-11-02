@@ -560,8 +560,8 @@ app.post('/signup-user', (req, res) => {
 // });
 
 
-app.post('/login', (req, res) => {
-  User.find({ email: req.body.username, password: req.body.password }, function (err, user) {
+app.post('/login',  async function (req, res) {
+  await User.find({ email: req.body.username, password: req.body.password }, function (err, user) {
     const token = jwt.sign(
       { user_id: req.body.username },
       process.env.TOKEN_KEY,
@@ -569,16 +569,19 @@ app.post('/login', (req, res) => {
         expiresIn: "2h",
       }
     );
-    if (err == null) return res.send({
+    if ((err == null) && user.length > 0) return res.send({
       response: true,
       message: "login successfuly",
-      data: user,
-      token: token
+      token: token,
+      data: user
+      
     });
     res.send({
       status: false,
       message: "Something went wrong!",
-      data: err,
+      token : '',
+      data: err
+      
     });
   });
 
